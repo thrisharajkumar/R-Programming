@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #Assignment 1
 # Statistical Computing and Empirical Methods, Data Science MSc
 #Teaching Block 1, 2024
@@ -55,4 +56,6 @@ ls()
 #An author name (for example your name);
 #An output format. Let’s choose HTML.
 
+=======
+>>>>>>> d4867d82a6a253d2f5ff34b5dc678ed99943b191
 
