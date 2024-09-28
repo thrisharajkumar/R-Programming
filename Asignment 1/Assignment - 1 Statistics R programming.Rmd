@@ -1,0 +1,45 @@
+---
+title: "Assignment - 1 Statistics R programming"
+author: "Thrisha Rajkumar"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+1. There is a block of YAML header at the start of the document which gives key information
+eg. title and output format.
+2. You can create headings of sections with “#”. Similarly, headings of subsections can
+be created with “##” and so on.
+3. You can embed blocks of R code by using ``` {r} before the R code and ``` afterwards.
+4. By default both the code and its output are displayed. If you only want to include the
+output but not the code itself include the option echo = FALSE in the code prefix. If you
+don’t want to include either then include the option include = FALSE.
+5. You can include hyperlinks by writing <url-name>.
+
+Step 1. Insert a block of R code. In this block of code, create a data frame animals df,
+using the same code you did in Question 1. In R Markdown, a block of code starts with ```
+{r} and ends with ```
+Step 2. Insert another block of code to print animals df.
+Step 3. You can then generate an HTML file with the “Knit” button just above your
+scripting window. Check what you have in the HTML file.
+
+
+```{r}
+animals <- c("Snake", "Ostrich", "Cat", "Spider")
+
+num_legs <- c(0,2,4,8)
+
+#combine the vectors in a dataframe calld animals_df
+#which has two columns - names of animals and their 
+#respective number of legs 
+
+#generating a dataframe
+animals_df <- data.frame(animals, num_legs)
+
+
+ls()
+```
+
+```{r}
+animals_df
+
+```
