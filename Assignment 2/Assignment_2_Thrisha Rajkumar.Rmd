@@ -1,0 +1,453 @@
+---
+title: "Assignment_2_Thrisha Rajkumar"
+author: "Thrisha Rajkumar"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Statistical Computing and Empirical Methods, TB1, 2024
+#Assignment 2
+
+# 1. Data Wrangling
+
+
+## 1.1 (Q1) Select and filter  
+(Q1). Use a combination of the select() and filter() functions to generate a data 
+frame called “hSF” which is a sub-table of the original Hawks data frame, such that
+1. Your data frame should include the columns:
+a) “Wing”
+b) “Weight”
+c) “Tail”
+2. Your data frame should contain a row for every hawk such that:
+a) They belong to the species of Red-Tailed hawks
+b) They have weight at least 1kg.
+3. Use the pipe operator “%>%” to simplify your code.
+
+## 1.1 (Q2) 
+
+```{r}
+# Load required packages
+library(Stat2Data)
+library(tidyverse)
+library(dplyr)
+library(knitr)
+#Load the Hawks data frame
+data(Hawks)
+
+#View the first few rows of the data
+head(Hawks)
+
+# Get the column headers
+column_headers <- colnames(Hawks)
+
+# Print the column headers
+print(column_headers)
+
+# Get unique species
+unique_species <- unique(Hawks$Species)
+
+# Print the unique species
+print(unique_species)
+
+ncol(Hawks) 
+
+# Filter and select relevant columns
+hSF <- Hawks %>%
+  filter(Species == "RT", Weight >= 1000) %>%
+  select(Wing, Weight, Tail)
+
+
+# Print the filtered data
+print(hSF)
+
+
+```
+
+## 1.1 (Q2)
+
+## How many variables does the data frame hSF have?
+
+--> In my assignment to understand the column headers in the Hawks data frame
+--> Get the column headers
+column_headers <- colnames(Hawks)
+which provides the column names i.e. variables in a vector form.
+
+--> ncol(Hawks) will give you the number of columns or variables in the dataframe.
+
+
+## What would you say to communicate this information to a Machine Learning Practitioner?
+
+--> To communicate the above Information to a Machine Learning Practitoner I would mention the features or variables in use which is Species name =Red Tailed Hawks, Weight of the hawks above 1000 g / 1 kg, wing and Tail.
+-->The importance of the number of variables for model complexity.
+-->The choices of the variables taken for  the model performance.
+
+
+## How many examples does the data frame hSF have? How many observations ? How many cases?
+
+num_observations <- nrow(hSF)
+print(num_observations)
+
+##1.2 (Q1) The arrange function
+....
+
+```{r}
+sorted_hSF <- hSF %>%
+  arrange(Wing)
+
+head(sorted_hSF, 5)
+
+```
+##1.3 (Q1) Join and rename functions
+
+(Q1). Use data.frame() to create a data frame that is called 
+hawkSpeciesNameCodes and is the same as the above data frame (i.e., containing 
+the correspondence between codes and the full species names).
+
+```{r}
+
+species_code <- c("CH", "RT", "SS")
+species_name_full <- c("Cooper's", "Red-tailed", "Sharp-shinned")
+hawkSpeciesNameCodes <- data.frame(species_code, species_name_full)
+
+print(hawkSpeciesNameCodes)
+
+```
+
+##1.3 (Q2)
+
+(Q2). Use a combination of the functions left_join(), the rename() and the select()
+functions to create a new data frame called “hawksFullName” which is the same as 
+the “Hawks” data frame except that the Species column contains the full names 
+rather than the two-letter codes.
+
+```{r}
+
+install.packages("dplyr")
+library(dplyr)
+
+
+hawksFullName <- Hawks %>%
+  left_join(hawkSpeciesNameCodes, by = c("Species" = "species_code")) %>%
+  select(Species = species_name_full, Wing, Weight)  
+
+print(hawksFullName)
+
+
+```
+## 1.3 (Q3)
+
+Q3). Use a combination of the head() and select() functions to print out the top 
+seven rows of the columns “Species”, “Wing” and “Weight” of the data frame called 
+“hawksFullName”. Do this without modifying the data frame you just created. 
+
+```{r}
+head(hawksFullName, 7)
+
+
+```
+
+#Does it matter what type of join function you use here? In what situations would it make a difference?
+
+
+## 1.4 The mutate function
+(Q1). Use the mutate(), select() and arrange() functions to create a new data 
+frame called “hawksWithBMI” which has the same number of rows as the original 
+Hawks data frame but only two columns - one with their Species and one with their 
+“bird BMI”. Also, arrange the rows in descending order of “bird BMI”.
+
+
+```{r}
+# Create the hawksWithBMI data frame
+hawksWithBMI <- Hawks %>%
+  mutate(bird_BMI = Weight*1000 / (Wing^2)) %>%  # Calculate bird BMI
+  select(Species, bird_BMI) %>%              # Select only Species and bird BMI
+  arrange(desc(bird_BMI))                    # Arrange rows in descending order of bird BMI
+
+# View the new dataframe
+head(hawksWithBMI, 8)
+```
+
+##1.5 (Q1) Summarize and group-by functions
+
+(Q1). In combination with the summarize() and the group_by functions, create a 
+summary table, broken down by Hawk species, which contains the following 
+summary quantities:
+1. The number of rows (num_rows);
+2. The average wing span in centimeters (mn_wing);
+3. The median wing span in centimeters (nd_wing);
+4. The trimmed average wing span in centimeters with trim=0.1, i.e., the mean 
+of the numbers after the 10% largest and the 10% smallest values being 
+removed (t_mn_wing);
+5. The biggest ratio between wing span and tail length (b_wt_ratio).
+Hint: type ?summarize to see a list of useful functions (mean, sum, etc) that can be 
+used to compute the summary quantities.
+
+```{r}
+hawksSummary <- Hawks %>%
+  group_by(Species) %>% 
+  summarize(num_rows = n(), 
+            mn_wing = mean(Wing, na.rm = TRUE),
+            nd_wing = median(Wing, na.rm = TRUE),
+            t_mn_wing = mean(Wing, trim = 0.1, na.rm=TRUE),
+            b_wt_ratio = max(Wing/Tail, na.rm = TRUE)
+              )
+print(hawksSummary)
+```
+
+##1.5 (Q2) Summarize and group-by functions
+(Q2). Next create a summary table of the following form: Your summary table will 
+show the number of missing values, broken down by species, for the columns Wing, 
+Weight, Culmen, Hallux, Tail, StandardTail, Tarsus, and Crop. You can complete this 
+task by combining the select(), group_by(), summarize(), across(), everything(), 
+sum() and is.na() functions.
+
+```{r}
+missingValuesSummary <- Hawks %>%
+  group_by(Species) %>%
+  summarize( across(c(Wing, Weight, Culmen, Hallux, Tail, StandardTail, Tarsus, Crop), ~sum(is.na(.))))
+#A formula that sums the number of NA values in each specified column.
+
+# View the summary table
+print(missingValuesSummary)
+  
+```
+
+##2. Random experiments, events and sample spaces, and the set  theory
+
+##2.1 Random experiments, events and sample spaces
+(Q1) Firstly, write down the definition of a random experiment, event and sample 
+space. This question aims to help you recall the basic concepts before completing 
+the subsequent tasks.
+
+--> 
+
+Random experiments - It is a procedure which is either real or imaginary which has a well-defined set of possible outcomes and could (atleast in principle) be repeated arbitarily many times.
+
+Event - An event is a set of possible outcomes of an experiments 
+Sample Spaces - It is a set of all possible outcomes of interest of an experiment.
+
+
+(Q2) Consider a random experiment of rolling a dice twice. Give an example of what 
+is an event in this random experiment. Also, can you write down the sample space as 
+a set? What is the total number of different events in this experiment? Is the empty 
+set considered as an event?
+
+Event A: Getting at least one "6" when rolling the die twice.
+
+Sample space is all the possible outcomes
+S={(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(2,1),(2,2),(2,3),(2,4),(2,5),(2,6),(3,1),(3,2),(3,3),(3,4),(3,5),(3,6),(4,1),(4,2),(4,3),(4,4),(4,5),(4,6),(5,1),(5,2),(5,3),(5,4),(5,5),(5,6),(6,1),(6,2),(6,3),(6,4),(6,5),(6,6)}
+
+2^n
+Total number of different events=2^36
+
+Yes an empty set is considered as an event.
+
+##2.2 Set theory
+Remember that a set is just a collection of objects. All that matters for the identity of 
+a set is the objects it contains. In particular, the elements within the set are 
+unordered, so for example the set {1, 2, 3} is exactly the same as the set {3, 2, 1}. In 
+addition, since sets are just collections of objects, each object can only be either 
+included or excluded and multiplicities do not change the nature of the set. In 
+particular, the set {1, 2, 2, 2, 3, 3} is exactly the same as the set A = {1, 2, 3}. In 
+general there is no concept of “position” within a set, unlike a vector or matrix.
+
+(Q1) Set operations:
+Let the sets A, B, C be defined by A := {1, 2, 3}, B := {2, 4, 6}, C := {4, 5, 6}.
+1. What are the unions 𝐴 ∪ 𝐵 and 𝐴 ∪ 𝐶?
+--> {1,2,3,4,6} and {1,2,3,4,5,6}
+
+2. What are the intersections 𝐴 ∩ 𝐵 and 𝐴 ∩ 𝐶?
+--> {2} and {null}
+
+3. What are the complements 𝐴 ∖ 𝐵 and 𝐴 ∖ 𝐶?
+--> {1,3} and {1,2,3}
+4. Are 𝐴 and 𝐵 disjoint? Are 𝐴 and 𝐶 disjoint?
+--> NO and YES
+
+5. Are 𝐵 and 𝐴 ∖ 𝐵 disjoint?
+--> YES
+
+6. Write down an arbitrary partition of {1,2,3,4,5,6} consisting of two sets. Also, 
+write down another partition of {1,2,3,4,5,6} consisting of three sets.
+-->
+P1={{1,2,3},{4,5,6}}
+P2={{1,2},{3,4},{5,6}}
+
+(Q2) Complements, subsets and De Morgan’s laws
+1. Can you give an expression for (A^c)^c without using the notion of a complement?
+$$
+A^c ={w \in Ω:w \notin A}
+$$
+2. What is 𝛺^c?
+$$
+(A^c)^c ={w \in Ω:w \notin A c}={w∈Ω:w∈A}=A
+$$
+3. (Subsets) Show that if 𝐴 ⊆ 𝐵, then 𝐵𝑐 ⊆ 𝐴𝑐
+Let
+$$
+w \in  B^c \implies w \notin B
+$$
+$$
+w \notin A \implies w \in A^c
+$$
+
+Therefore, 
+$$
+B^c \subseteq A^c
+$$
+4. (De Morgan’s laws) Show that (𝐴 ∩ 𝐵)𝑐 = 𝐴𝑐 ∪ 𝐵𝑐. Let’s suppose we have a sequence of events 𝐴1, 𝐴2, ⋯ , 𝐴𝐾 ⊆ 𝛺. Can you write out an expression for (∩𝑘=1𝐾 𝐴𝑘)𝑐?
+
+$$
+\left( \bigcap_{k=1}^{K} A_k \right)^c = \bigcup_{k=1}^{K} A_k^c 
+$$
+
+5. (De Morgan’s laws) Show that (𝐴 ∪ 𝐵)𝑐 = 𝐴𝑐 ∩ 𝐵𝑐
+
+$$
+\left( \bigcup_{k=1}^{K} A_k \right)^c = \bigcap_{k=1}^{K} A_k^c 
+$$
+
+Let’s suppose we have a sequence of events 𝐴1, 𝐴2, ⋯ , 𝐴𝐾 ⊆ 𝛺. Can you write out an expression for (∪𝑘=1𝐾 𝐴𝑘)𝑐?
+
+$$
+\left( \bigcup_{k=1}^{K} A_k \right)^c = \bigcap_{k=1}^{K} A_k^c 
+$$
+
+(Q3) Cardinality and the set of all subsets:
+Suppose that 𝛺 = {𝑤1, 𝑤2, ⋯ , 𝑤𝐾} contains 𝐾 elements for some natural number 𝐾. 
+Here 𝛺 has cardinality K.
+Let 𝐸 be a set of all subsets of 𝛺, i.e., 𝐸 : = {𝐴|𝐴 ⊂ 𝛺}. Note that here 𝐸 is a set. Give a 
+formula for the cardinality of 𝐸 in terms of 𝐾.
+
+$$
+|E| = 2^K
+$$
+
+(Q4) Disjointness and partitions.
+Suppose we have a sample space 𝛺, and events 𝐴1, 𝐴2, 𝐴3, 𝐴4 are subsets of 𝛺.
+1. Can you think of a set which is disjoint from every other set? That is, find a set 𝐴 ⊆ 𝛺 such that 𝐴 ∩ 𝐵 = ∅ for all 𝐵 ⊆ 𝛺.
+
+--> The empty set 𝐴=∅ is disjoint from every other set, since 𝐴∩𝐵=∅ A∩B=∅ for all 𝐵⊆Ω.
+
+2. Define events 𝑆1 : = 𝐴1, 𝑆2 = 𝐴2 ∖ 𝐴1, 𝑆3 = 𝐴3 ∖ (𝐴1 ∪ 𝐴2), 𝑆4 = 𝐴4 ∖(𝐴1 ∪ 𝐴2 ∪ 𝐴3). Show that 𝑆1, 𝑆2, 𝑆3, 𝑆4 form a partition of 𝐴1 ∪ 𝐴2 ∪ 𝐴3 ∪ 𝐴4.
+
+--> 
+
+Disjoint and Union proves
+
+(Q5) Indicator function.
+Suppose we have a sample space 𝛺, and the event 𝐴 is a subset of𝛺. Let 𝟏𝐴 be the indicator function of 𝐴.
+
+1. Write down the indicator function 𝟏𝐴𝑐of 𝐴𝑐(use 𝟏𝐴 in your formula).
+
+$$
+1_A^c = 1_Ω - 1_A
+$$
+
+2. Can you find a set 𝐵 whose indicator function is 𝟏𝐴𝑐 +𝟏𝐴?
+
+$$
+B = A^c
+$$
+$$
+1_B = 1_A^c
+$$
+$$
+1_A^c + 1_A = 1_Ω 
+$$
+
+3. Recall that 𝟏𝐴∩𝐵 = 𝟏𝐴 ⋅ 𝟏𝐵 and 𝟏𝐴∪𝐵 = max(𝟏𝐴, 𝟏𝐵) = 𝟏𝐴 + 𝟏𝐵 − 𝟏𝐴 ⋅ 𝟏𝐵 for any 𝐴 ⊆ 𝛺 and 𝐵 ⊆ 𝛺. Combining this with the conclusion from Question (Q5) 1, use indicator functions to prove (𝐴 ∩ 𝐵)𝑐 = 𝐴𝑐 ∪ 𝐵𝑐
+(De Morgan’s laws).
+
+$$
+\mathbb{1}_{(A \cap B)^c} = \mathbb{1}_{\Omega} - \mathbb{1}_{A \cap B} = 1 - \mathbb{1}_{A} \cdot \mathbb{1}_{B}
+$$
+
+Using the union of complements, we have:
+
+$$
+\mathbb{1}_{A^c \cup B^c} = \max(\mathbb{1}_{A^c}, \mathbb{1}_{B^c}) = (1 - \mathbb{1}_{A}) + (1 - \mathbb{1}_{B}) - (1 - \mathbb{1}_{A})(1 - \mathbb{1}_{B})
+$$
+
+This simplifies to:
+
+$$
+\mathbb{1}_{A^c \cup B^c} = 1 - \mathbb{1}_{A} \cdot \mathbb{1}_{B}
+$$
+
+Hence, we have verified that:
+
+$$
+(A \cap B)^c = A^c \cup B^c
+$$
+
+(Q6) Uncountable infinities (this is an optional extra).
+This is a challenging optional extra. You may want to return to this question once 
+you have completed all other questions.
+Show that the set of numbers 𝛺 : = [0,1] is uncountably infinite.
+
+
+##3. Probability theory
+
+##3.1 Rules of probability
+
+(Q1) Construct a probability function based on the Rules of probability
+Consider a sample space 𝛺 = {𝑎, 𝑏, 𝑐} and a set of events ℰ = {𝐴 ⊆ 𝛺} (i.e., ℰ consists of all subsets of 𝛺). Based on the rules of probability, find a probability function 
+ℙ: ℰ → [0,1] that satisfies
+ℙ({𝑎, 𝑏}) = 0.6 and ℙ({𝑏, 𝑐}) = 0.5.
+In your example, you need to define a function called ℙ. The function maps each event in ℰ to a number. Make sure that your function ℙ satisfies the three rules, but you don’t need to write down the proof (that it satisfies the three rules).
+
+Let P({a}) = x, 
+P({b}) = y,
+P({c}) = z
+
+x+y+z = 1, x+y =0.6, y+z = 0.5
+
+
+(Q2) Verify that the following probability space satisfies the rules of probability.
+Consider a setting in which the sample space 𝛺 = {0,1}, and ℰ = {𝐴 ⊆ 𝛺} ={∅,{0},{1},{0,1}}. For a fixed 𝑞 ∈ [0,1], define a function ℙ: ℰ → [0,1] by ℙ(∅) = 0, ℙ({0}) = 1 − 𝑞, ℙ({1}) = 𝑞, ℙ({0,1}) = 1.
+Show that the probability space (𝛺, ℰ, ℙ) satisfies the three rules of probability.
+
+
+P(∅) = 0
+P({0}) = 1- q
+P({1}) = q
+P({0,1}) = 1
+
+P(S) = P(∅)+P({0})+P({1})+P({0,1}) = 1
+Hence all the rules of probability satisfied
+
+
+## 3.2 Deriving new properties from the rules of probability
+(Q1) Union of a finite sequence of disjoint events.
+
+for an infinite sequence of pairwise disjoint events 𝐴1, 𝐴2, ⋯. Show that for a finite 
+sequence of disjoint events 𝐴1, 𝐴2, ⋯ 𝐴𝑛, for any integer 𝑛 bigger than 1, the below 
+equality holds as a consequence of Rule 3:
+$$
+P\left(\bigcup_{i=1}^{n} A_i\right) = \sum_{i=1}^{n} P(A_i)
+$$
+
+
+(Q2) Probability of a complement.
+Prove that if 𝛺 is a sample space, 𝑆 ⊆ 𝛺 is an event and 𝑆𝑐:= 𝛺 ∖ 𝑆 is its complement, then we have ℙ(𝑆𝑐) = 1 − ℙ(𝑆).
+
+$$
+P(S^c) = P(\Omega \setminus S) = 1 - P(S)
+$$
+
+(Q3) The union bound
+In Rule 3, for pairwise disjoint events 𝐴1, 𝐴2, ⋯, we have
+Give an example of a probability space and a sequence of sets 𝑆1, 𝑆2, ⋯
+
+$$
+P(S_1 \cup S_2) < P(S_1) + P(S_2)
+$$
+
+(Q4) Probability of union and intersection of events.
+Show that for events 𝐴 ⊆ 𝛺 and 𝐵 ⊆ 𝛺, we have
+ℙ(𝐴 ∪ 𝐵) = ℙ(𝐴) + ℙ(𝐵) − ℙ(𝐴 ∩ 𝐵)
+
+$$
+P(A \cup B) = P(A) + P(B) - P(A \cap B)
+$$
