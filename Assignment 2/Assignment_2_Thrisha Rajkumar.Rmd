@@ -2,7 +2,9 @@
 title: "Assignment_2_Thrisha Rajkumar"
 author: "Thrisha Rajkumar"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 # Statistical Computing and Empirical Methods, TB1, 2024
@@ -74,18 +76,25 @@ which provides the column names i.e. variables in a vector form.
 
 --> ncol(Hawks) will give you the number of columns or variables in the dataframe.
 
+```{r}
+ncol(Hawks)
+```
 
 ## What would you say to communicate this information to a Machine Learning Practitioner?
 
 --> To communicate the above Information to a Machine Learning Practitoner I would mention the features or variables in use which is Species name =Red Tailed Hawks, Weight of the hawks above 1000 g / 1 kg, wing and Tail.
+
 -->The importance of the number of variables for model complexity.
+
 -->The choices of the variables taken for  the model performance.
 
 
 ## How many examples does the data frame hSF have? How many observations ? How many cases?
 
+```{r}
 num_observations <- nrow(hSF)
 print(num_observations)
+```
 
 ##1.2 (Q1) The arrange function
 ....
@@ -147,6 +156,12 @@ head(hawksFullName, 7)
 ```
 
 #Does it matter what type of join function you use here? In what situations would it make a difference?
+
+--> Yes, Left join is the suitable join function for this dataframe creation. As Left join keeps all the rows from the lft data frame which is Hawks and addss the matching rows from the right data frame (hawksSpeciesNameCodes). If there is no match NA will be inserted for the missing values from the right data frame.
+
+--> Left join is idea as we require all the Rows from the Hawks dataframe.
+
+
 
 
 ## 1.4 The mutate function

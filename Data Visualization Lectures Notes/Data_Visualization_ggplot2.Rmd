@@ -1,0 +1,144 @@
+---
+title: "Lecture_7_Week3"
+author: "Thrisha Rajkumar"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###  load packages: the Palmer penguins data set & tidyverse 
+
+First, load tidyverse
+```{r}
+library(tidyverse)
+```
+
+Second, we will be based on the Palmer penguins data set, so load the dataset 
+```{r}
+library(palmerpenguins)
+head(penguins)
+```
+
+We also need the ggplot2 package, which is contained in tidyverse. The ggplot2 package implements Leland Wilkinson’s Grammar of Graphics:
+1. An aesthetic is a mapping between a variable and a visual cue.
+2. A glyph is a basic graphical element e.g. a mark or symbol.
+3. A guide is an annotation which provides context.
+
+
+### Univariate plot - histogram 
+
+First, we create a plot object using the ggplot function. The plot object specifies the aesthetic (using the aes() function). 
+
+A histogram plot with an aesthetic that maps Flipper length to horizontal position. Using the geom_histogram function to plot histogram
+
+```{r}
+univar_plot <- ggplot(data=penguins, aes(x=flipper_length_mm)) + xlab("Flipper Length (mm)")
+univar_plot+geom_histogram(binwidth = 5)+ylab("Count")
+```
+
+Note that we have created guides using xlab & ylabels; 
+
+
+### Univariate plot - density plot 
+
+Replacing the above geom_histogram with geom_density to plot density: 
+```{r}
+univar_plot+geom_density(adjust=0.5)+ylab('Density')
+```
+
+
+### Bivariate plots - density 
+Adding another aesthetic that maps species to color, and use geom_density in a simlar way to the above density plot:
+```{r}
+ggplot(data=rename(penguins, Species=species), aes(x=flipper_length_mm, color=Species))+
+  geom_density()+theme_bw()+xlab("Flipper length (mm)")+ylab("Density")
+```
+
+
+### Bivariate plots - box  
+
+```{r}
+ggplot(data=penguins, aes(x=flipper_length_mm, y=species))+geom_boxplot()+
+  xlab('Flipper length (mm)') + ylab("Penguin species")
+```
+
+
+### Bivariate plots - violin 
+```{r}
+ggplot(data=rename(penguins, Species=species), aes(x=flipper_length_mm, y=Species, fill=Species))+geom_violin()+theme_bw()+xlab("Flipper length (mm)")
+```
+
+### Bivariate plots - scatter 
+
+Scatter plot for flipper length vs body mass, using geom_point:
+
+```{r}
+mass_flipper_scatter <- ggplot(data=penguins, aes(y=body_mass_g, x=flipper_length_mm))+
+  xlab("Flipper length (mm)") + ylab("Body mass (g)")
+mass_flipper_scatter+geom_point(size=3)
+```
+
+
+### Adding more aesthetics
+
+Adding another aesthetic using arguments in the geom_point function (Bill length to color):
+
+```{r}
+mass_flipper_scatter+geom_point(aes(color=bill_length_mm, size=3))+
+  scale_color_gradient(low="blue", high="red")+guides(color=guide_legend("Bill length (mm)"))
+```
+
+Adding one more aesthetic (Bill depth to size):
+```{r}
+mass_flipper_scatter+geom_point(aes(color=bill_length_mm, size=bill_depth_mm))+
+  scale_color_gradient(low="blue", high="red")+
+  guides(color=guide_legend("Bill length (mm)"), size=guide_legend("Bill depth (mm)"))
+```
+
+### Multivariate plots
+Changing two of the aesthetic, one which maps species to color, another one with map species to shape:
+```{r}
+mass_flipper_scatter+geom_point(aes(color=species, shape=species))
+```
+
+
+One can also map species to text:
+```{r}
+mass_flipper_scatter + geom_text(aes(label=species, color=species)) + 
+  guides(color=guide_legend("Species"))
+```
+
+
+Alternatively, one can use facets to display a categorical variable (species):
+
+```{r}
+mass_flipper_scatter + geom_point() + facet_wrap(~species)
+```
+
+
+### Trend lines 
+
+Create trend line to illustrate the relationship between two variables (e.g., flipper length and body mass), using the geom_smooth function:
+```{r}
+trend_plot <- ggplot(data=filter(penguins, species=='Gentoo'), aes(y=body_mass_g, x=flipper_length_mm))  + xlab('Flipper length (mm)') + ylab('Body mess (g)') + geom_point()
+trend_plot + geom_smooth()
+```
+
+Alternatively, we can add a linear trend line, using method "lm" of geom_smooth:
+```{r}
+trend_plot+geom_smooth(method="lm")
+```
+
+
+### Adding annotation to the plot
+Using a combination of geom_curve and geom_text:
+```{r}
+trend_plot + geom_smooth(method="lm") + 
+  geom_curve(x=220, xend=209, y=4250, yend=3975, arrow=arrow(length=unit(0.5, 'cm')), curvature=0.1) + 
+  geom_text(x=225, y=4250, label="The lightest Gentoo \n penguin weighs 39.5 kg")
+```
