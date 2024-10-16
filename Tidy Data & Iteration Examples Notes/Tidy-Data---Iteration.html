@@ -616,6 +616,189 @@ more.</p>
 <pre class="r"><code>map_int(v, is_div_2_3)</code></pre>
 <pre><code>## [1] 0 1 1 0 1</code></pre>
 </div>
+<div id="example-finding-variables-of-maximal-correlation" class="section level2">
+<h2>5. Example: Finding variables of maximal correlation</h2>
+<p>Now let’s consider an example. Suppose that we want to create a
+function that</p>
+<ol style="list-style-type: decimal">
+<li><p>Takes as input a data frame and a variable name (column
+name)</p></li>
+<li><p>Computes the correlation with all other numeric
+variables</p></li>
+<li><p>Returns the name of the variable with maximal absolute
+correlation, and the corresponding correlation.</p></li>
+</ol>
+<p>Recall that the correlation between vector <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> is defined as (Pearson formula):</p>
+<p><span class="math display">\[
+\frac{\sum_1^{n}
+(x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum_{i=1}^n(x_i-\bar{x})^2}
+\sqrt{\sum_{i=1}^n (y_i-\bar{y})^2} }
+\]</span></p>
+<p>In R, the correlation can be computed using the function cor (type
+?cor for more details)</p>
+<p>We will start with a script in a specific case where the dataset
+penguins is used and suppose the variable name is ‘body_mass_g’.</p>
+<pre class="r"><code>col_name &lt;- &#39;body_mass_g&#39;
+df = penguins
+
+v_col &lt;- select(df, all_of(col_name)) # extract column based on col_name
+df_num &lt;- select_if(df, is.numeric) %&gt;% select(-all_of(col_name)) # select all numeric columns excluding col_name
+
+cor_func &lt;- function(x){ cor(x, v_col, use=&#39;complete.obs&#39;) } # a function that computes cor between v_col and a vector
+correlations &lt;- unlist(map(df_num, cor_func)) # compute correlations with all other numeric columns (with map)
+print(&#39;the computed correlations are:&#39;); print(correlations)
+
+max_abs_cor_var &lt;- names( which( abs(correlations)==max(abs(correlations))  ) ) # extract the name of the column with max correlation
+cor_val &lt;- as.double(correlations[max_abs_cor_var])
+print(&#39;\ncolumn with maximal correlation:&#39; ); print(max_abs_cor_var)</code></pre>
+<pre><code>## [1] &quot;the computed correlations are:&quot;
+##    bill_length_mm     bill_depth_mm flipper_length_mm              year 
+##        0.59510982       -0.47191562        0.87120177        0.04220939 
+## [1] &quot;\ncolumn with maximal correlation:&quot;
+## [1] &quot;flipper_length_mm&quot;</code></pre>
+<p>Here we used map to apply the function cor_func on each element
+(column) of df_num.</p>
+<p>We then convert the above script into a function max_cor_var:</p>
+<pre class="r"><code>max_cor_var &lt;- function(df, col_name){
+
+  v_col &lt;- select(df, all_of(col_name)) # extract column based on col_name
+  df_num &lt;- select_if(df, is.numeric) %&gt;% select(-all_of(col_name)) # select all numeric columns excluding col_name
+  
+  cor_func &lt;- function(x){ cor(x, v_col, use=&#39;complete.obs&#39;) } # a function that computes cor between v_col and a vector
+  correlations &lt;- unlist(map(df_num, cor_func)) # compute correlations with all other numeric columns (with map)
+
+  max_abs_cor_var &lt;- names( which( abs(correlations)==max(abs(correlations))  ) ) # extract the name of the column with max correlation
+  cor_val &lt;- as.double(correlations[max_abs_cor_var])
+  
+  return (data.frame(var_name=max_abs_cor_var, cor=cor_val)) # return as a data frame 
+}
+
+max_cor_var(penguins, &quot;body_mass_g&quot;)</code></pre>
+<pre><code>##            var_name       cor
+## 1 flipper_length_mm 0.8712018</code></pre>
+<p>We can also perform the above analysis on individual groups of the
+data frame, with the help of the nest and unnest functions:</p>
+<pre class="r"><code>cor_by_group &lt;- penguins %&gt;%
+  group_by(species) %&gt;%
+  nest() %&gt;%
+  mutate(max_cor=map(data, function(x){max_cor_var(x, &#39;body_mass_g&#39;)})) 
+
+print(cor_by_group)</code></pre>
+<pre><code>## # A tibble: 3 × 3
+## # Groups:   species [3]
+##   species   data               max_cor     
+##   &lt;fct&gt;     &lt;list&gt;             &lt;list&gt;      
+## 1 Adelie    &lt;tibble [152 × 7]&gt; &lt;df [1 × 2]&gt;
+## 2 Gentoo    &lt;tibble [124 × 7]&gt; &lt;df [1 × 2]&gt;
+## 3 Chinstrap &lt;tibble [68 × 7]&gt;  &lt;df [1 × 2]&gt;</code></pre>
+<pre class="r"><code>select(cor_by_group, -data) %&gt;%
+  unnest(cols=max_cor)</code></pre>
+<pre><code>## # A tibble: 3 × 3
+## # Groups:   species [3]
+##   species   var_name            cor
+##   &lt;fct&gt;     &lt;chr&gt;             &lt;dbl&gt;
+## 1 Adelie    bill_depth_mm     0.576
+## 2 Gentoo    bill_depth_mm     0.719
+## 3 Chinstrap flipper_length_mm 0.642</code></pre>
+<p>Note that here we use nest() to create a data frame of nested
+variables, associated with the individual groups. This allows us to
+perform group-wise operations. In this example, the max_cor_var is
+applied to each group, represented as a data frame in the data
+column.</p>
+</div>
+<div id="missing-data" class="section level2">
+<h2>6. Missing data</h2>
+<p>Missing data is remarkably common in practical Data Science
+applications.</p>
+<p>Consider for example the following data frame called stocks</p>
+<pre class="r"><code>stocks &lt;- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+print(stocks)</code></pre>
+<pre><code>## # A tibble: 7 × 3
+##    year   qtr return
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+## 1  2015     1   1.88
+## 2  2015     2   0.59
+## 3  2015     3   0.35
+## 4  2015     4  NA   
+## 5  2016     2   0.92
+## 6  2016     3   0.17
+## 7  2016     4   2.66</code></pre>
+<p>We can see that the data stocks has missing values.</p>
+<p>Explicit missing data: a NA value appears in the return column,
+representing a missing value.</p>
+<p>Implicit missing data: Data about the first quarter of 2016 is
+missing, i.e., the whole row does not appear.</p>
+<p>To make the implicit missing data explicit, we can insert rows that
+include NA values. We use the complete function to do this:</p>
+<pre class="r"><code>complete(stocks, year, qtr)</code></pre>
+<pre><code>## # A tibble: 8 × 3
+##    year   qtr return
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+## 1  2015     1   1.88
+## 2  2015     2   0.59
+## 3  2015     3   0.35
+## 4  2015     4  NA   
+## 5  2016     1  NA   
+## 6  2016     2   0.92
+## 7  2016     3   0.17
+## 8  2016     4   2.66</code></pre>
+<p>Now, a row is created for the first quarter of 2016, where the return
+column is filled with NA.</p>
+<p>We can find the row with missing values using the function
+complete.cases, which returns a logical vector indicating which cases
+are complete.</p>
+<pre class="r"><code>complete.cases(stocks)</code></pre>
+<pre><code>## [1]  TRUE  TRUE  TRUE FALSE  TRUE  TRUE  TRUE</code></pre>
+<p>With the complete case analysis, we can remove the incomplete cases,
+where there are missing values</p>
+<pre class="r"><code>filter(stocks, complete.cases(stocks))</code></pre>
+<pre><code>## # A tibble: 6 × 3
+##    year   qtr return
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+## 1  2015     1   1.88
+## 2  2015     2   0.59
+## 3  2015     3   0.35
+## 4  2016     2   0.92
+## 5  2016     3   0.17
+## 6  2016     4   2.66</code></pre>
+<p>Now the NA value has been removed from the table.</p>
+<p>In some cases, we might want to replace the missing values with some
+numbers, instead of deleting them.</p>
+<p>For example, we can replace them with the mean of the column.</p>
+<pre class="r"><code>replace_by_mean &lt;- function(x){
+  mu &lt;- mean(x, na.rm=TRUE) # first compute the mean of x
+  
+  impute_f &lt;- function(z){ # imputation on a single element z
+    if (is.na(z)){
+      return (mu)
+    } else {
+      return (z)
+    }
+  }
+  return (map_dbl(x, impute_f)) # apply the function to impute across the whole vector x
+}
+
+x &lt;- c(1,2,NA,4)
+replace_by_mean(x)</code></pre>
+<pre><code>## [1] 1.000000 2.000000 2.333333 4.000000</code></pre>
+<p>The third element NA is replaced with the mean of the vector.</p>
+<pre class="r"><code>mutate(stocks, return=replace_by_mean(return))</code></pre>
+<pre><code>## # A tibble: 7 × 3
+##    year   qtr return
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+## 1  2015     1   1.88
+## 2  2015     2   0.59
+## 3  2015     3   0.35
+## 4  2015     4   1.10
+## 5  2016     2   0.92
+## 6  2016     3   0.17
+## 7  2016     4   2.66</code></pre>
+<p>Here NA on the 4th row has been replaced by the mean value.</p>
+</div>
 
 
 
