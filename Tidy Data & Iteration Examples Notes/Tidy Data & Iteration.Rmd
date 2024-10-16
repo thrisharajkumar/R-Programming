@@ -1,0 +1,317 @@
+---
+title: "Tidy Data & Iteration"
+author: "Thrisha Rajkumar"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## Load Packages 
+
+```{r}
+library(palmerpenguins)
+library(tidyverse)
+```
+
+```{r}
+penguins
+```
+
+the example will be based on the package tidyr
+
+## 1. Reshaping data (Narrow data & wide data)
+
+Create summary data of the penguins dataset (group by species):
+```{r}
+penguins_summary <-  penguins %>%
+  group_by(species) %>%
+  summarise(bill=round(mean(bill_length_mm, na.rm=TRUE),digits=1), flipper=round(mean(flipper_length_mm, na.rm=TRUE),digits=1), weight=round(mean(body_mass_g, na.rm=TRUE),digits=1))
+print(penguins_summary)
+```
+
+Create a data frame in a narrow format 
+
+```{r}
+penguins_summary_narrow <- penguins_summary %>%
+  pivot_longer(c(bill, flipper, weight), names_to = 'property', values_to = 'value')
+print(penguins_summary_narrow)
+```
+
+Suppose that we are given the above narrow data. We want to reshape the narrow data to wide data, using the function pivot_wider:
+
+```{r }
+penguins_summary_wide <- penguins_summary_narrow %>%
+  pivot_wider(names_from = property, values_from = value)
+print(penguins_summary_wide)
+```
+
+
+Similarly, to get the narrow data from the wide data, we can use the pivot_longer
+```{r }
+penguins_summary_wide %>% 
+  pivot_longer(c(bill, flipper, weight), names_to='property', values_to='value')
+```
+
+Note that we have used "c(bill, flipper, weight)" to specify the list of columns that we want to 'fold' into the property column. This is equivalent to excluding the species column from the list. So we can also write 
+
+```{r }
+penguins_summary_wide %>% 
+  pivot_longer(cols = !species, names_to='property', values_to='value')
+```
+The result is the same as before. 
+
+## 2. Uniting and separating data
+
+Using penguins data again 
+```{r }
+print(penguins_summary)
+```
+
+
+First, we will combine the flipper and weight columns into a single column called flipper_over_weight, by putting their values together with a separator character "/" between them. 
+This is done via the function unite. 
+
+```{r}
+uni_df <- penguins_summary %>%
+  unite(flipper_over_weight, flipper, weight, sep = "/")
+print(uni_df)
+```
+
+Second, we can reverse this process, by splitting a column into two, i.e., separating the numbers with a separator character "/" between them. 
+This is done via the function "separate".
+
+```{r }
+sep_df <- uni_df %>% 
+  separate(flipper_over_weight, into=c("flipper", "weight"), sep="/")
+print(sep_df)
+```
+
+The obtained data frame sep_df is different from penguins_summary. The data type of the columns flipper and weight are characters, while that of the penguins_summary are numeric. This is because, by default, the separate function preserves the type of column (flipper_over_weight is a character column). 
+
+```{r, results = 'hold'}
+mode(sep_df$weight)
+mode(penguins_summary$weight)
+```
+
+separate function to convert the column types to numeric by using "convert = TRUE", for example:
+
+```{r }
+sep_df_double <- uni_df %>% 
+  separate(flipper_over_weight, into=c("flipper", "weight"), sep="/", convert = TRUE)
+print(sep_df_double)
+```
+
+## 3. Nesting and unnesting
+
+Suppose that we are given a data frame called musicians, which contains information about the band of each musician and the instrument that they play. 
+
+```{r, results = 'hold'}
+musicians <- full_join(band_members, band_instruments)
+print(musicians)
+
+```
+
+
+We want to convert each group in the data frame into a data frame. 
+This can be done by nest(). The nest function outputs a data frame, each row of which contains a tibble (a special type of data frame) corresponding to an individual group. So the number of rows is equal to the number of groups in the original data frame. Nest is often used together with the group_by function. 
+
+```{r }
+musicians_nest <- musicians %>%
+  group_by(name) %>%
+  nest()
+print(musicians_nest)
+print(filter(musicians_nest,name=='Mick')$data) # the data of Mick is a data frame
+```
+
+By default, the tibbles associated with the group are contained in a column called "data". The type of this column is list, hence it is called a list-column. 
+
+We can undo the nest operations, i.e., flattening a data frame in a nested form into regular columns, by using the unnest function:
+
+```{r }
+musicians_nest %>% 
+  unnest(cols = data)
+```
+
+Note that here we specify the column to be unnested. In this example, this is the 'data' column we created through the nest function.
+
+## 4. Iteration based on the map function
+
+The map function in R can be used to implement iterations. 
+Particularly, the map function transforms its input by applying a function to each element of a list or atomic vector and returning an object of the same length as the input. Let's understand this using an example:
+
+```{r }
+is_div_2_3 <- function(x){
+  if(x%%2 ==0 | x%%3 ==0){
+    return (TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+v <- c(1,2,3,5,6)
+map(v, is_div_2_3)
+```
+
+Note that the function map returns a list. 
+There are several variants of the map function that return a vector of a specific type, such as 
+map_lgl() returns booleans, map_int() return integers, map_dbl() returns double and map_chr() return strings. 
+E.g., type ?map_int to see more. 
+
+```{r}
+map_int(v, is_div_2_3)
+```
+
+## 5. Example: Finding variables of maximal correlation
+
+Now let's consider an example. Suppose that we want to create a function that 
+
+1) Takes as input a data frame and a variable name (column name)
+
+2) Computes the correlation with all other numeric variables
+
+3) Returns the name of the variable with maximal absolute correlation, and the corresponding correlation.
+
+Recall that the correlation between vector $x$ and $y$ is defined as (Pearson formula):
+
+\[
+\frac{\sum_1^{n} (x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum_{i=1}^n(x_i-\bar{x})^2} \sqrt{\sum_{i=1}^n (y_i-\bar{y})^2} }
+\]
+
+In R, the correlation can be computed using the function cor (type ?cor for more details)
+
+
+
+We will start with a script in a specific case where the dataset penguins is used and suppose the variable name is 'body_mass_g'. 
+
+
+```{r, results = 'hold'}
+col_name <- 'body_mass_g'
+df = penguins
+
+v_col <- select(df, all_of(col_name)) # extract column based on col_name
+df_num <- select_if(df, is.numeric) %>% select(-all_of(col_name)) # select all numeric columns excluding col_name
+
+cor_func <- function(x){ cor(x, v_col, use='complete.obs') } # a function that computes cor between v_col and a vector
+correlations <- unlist(map(df_num, cor_func)) # compute correlations with all other numeric columns (with map)
+print('the computed correlations are:'); print(correlations)
+
+max_abs_cor_var <- names( which( abs(correlations)==max(abs(correlations))  ) ) # extract the name of the column with max correlation
+cor_val <- as.double(correlations[max_abs_cor_var])
+print('\ncolumn with maximal correlation:' ); print(max_abs_cor_var)
+```
+
+Here we used map to apply the function cor_func on each element (column) of df_num. 
+
+
+
+We then convert the above script into a function max_cor_var:
+
+```{r }
+max_cor_var <- function(df, col_name){
+
+  v_col <- select(df, all_of(col_name)) # extract column based on col_name
+  df_num <- select_if(df, is.numeric) %>% select(-all_of(col_name)) # select all numeric columns excluding col_name
+  
+  cor_func <- function(x){ cor(x, v_col, use='complete.obs') } # a function that computes cor between v_col and a vector
+  correlations <- unlist(map(df_num, cor_func)) # compute correlations with all other numeric columns (with map)
+
+  max_abs_cor_var <- names( which( abs(correlations)==max(abs(correlations))  ) ) # extract the name of the column with max correlation
+  cor_val <- as.double(correlations[max_abs_cor_var])
+  
+  return (data.frame(var_name=max_abs_cor_var, cor=cor_val)) # return as a data frame 
+}
+
+max_cor_var(penguins, "body_mass_g")
+```
+
+
+We can also perform the above analysis on individual groups of the data frame, with the help of the nest and unnest functions:
+```{r }
+cor_by_group <- penguins %>%
+  group_by(species) %>%
+  nest() %>%
+  mutate(max_cor=map(data, function(x){max_cor_var(x, 'body_mass_g')})) 
+
+print(cor_by_group)
+
+select(cor_by_group, -data) %>%
+  unnest(cols=max_cor)
+```
+
+Note that here we use nest() to create a data frame of nested variables, associated with the individual groups. 
+This allows us to perform group-wise operations. In this example, the max_cor_var is applied to each group, represented as a data frame in the data column. 
+
+
+
+
+## 6. Missing data
+
+Missing data is remarkably common in practical Data Science applications. 
+
+Consider for example the following data frame called stocks
+```{r }
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+print(stocks)
+```
+We can see that the data stocks has missing values. 
+
+Explicit missing data: a NA value appears in the return column, representing a missing value. 
+
+Implicit missing data: Data about the first quarter of 2016 is missing, i.e., the whole row does not appear. 
+
+
+
+To make the implicit missing data explicit, we can insert rows that include NA values. We use the complete function to do this:
+```{r }
+complete(stocks, year, qtr)
+```
+Now, a row is created for the first quarter of 2016, where the return column is filled with NA. 
+
+
+
+We can find the row with missing values using the function complete.cases, which returns a logical vector indicating which cases are complete. 
+```{r }
+complete.cases(stocks)
+```
+
+With the complete case analysis, we can remove the incomplete cases, where there are missing values 
+```{r }
+filter(stocks, complete.cases(stocks))
+```
+Now the NA value has been removed from the table. 
+
+
+In some cases, we might want to replace the missing values with some numbers, instead of deleting them. 
+
+For example, we can replace them with the mean of the column. 
+
+```{r }
+replace_by_mean <- function(x){
+  mu <- mean(x, na.rm=TRUE) # first compute the mean of x
+  
+  impute_f <- function(z){ # imputation on a single element z
+    if (is.na(z)){
+      return (mu)
+    } else {
+      return (z)
+    }
+  }
+  return (map_dbl(x, impute_f)) # apply the function to impute across the whole vector x
+}
+
+x <- c(1,2,NA,4)
+replace_by_mean(x)
+```
+The third element NA is replaced with the mean of the vector. 
+
+
+
+```{r }
+mutate(stocks, return=replace_by_mean(return))
+```
+Here NA on the 4th row has been replaced by the mean value. 
+
+
+
