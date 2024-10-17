@@ -1,0 +1,205 @@
+---
+title: "Assignment 3"
+author: "Thrisha Rajkumar"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+## Load Packages
+
+We need to load two packages, namely “Stat2Data” and “tidyverse”, before
+answering the questions. If they haven’t been installed on your computer, please use
+“install.packages()” to install them first.
+1. Load the tidyverse package:
+2. Load the Stat2Data package and then the dataset Hawks:
+
+```{r}
+library(tidyverse)
+library(Stat2Data)
+data("Hawks")
+```
+
+## Visualization
+
+ using ggplot2
+ 
+## (Q1) After the dataset Stat2Data was loaded sucesfully, create a smaller dataset with the code below
+
+```{r}
+hawksSmall<-
+drop_na(select(Hawks,Age,Day,Month,Year,CaptureTime,Species,Wing,Weight,Tail))
+dim(hawksSmall)
+head(hawksSmall)
+```
+
+## (Q2) Use a combination of the functions “ggplot()” and “geom_histogram” to create a histogram plot of the weights of Hawks within the hawksSmall data frame with bin widths of 10. Your result should look something like the following.
+
+```{r}
+ggplot(data=hawksSmall,aes(x=Weight))+geom_histogram(binwidth=10)+
+xlab("Weight")+ylab("Count")
+
+```
+
+## (Q3) Similar to (Q2), use the “geom_density()” function to create two density plots of the tail lengths of Hawks within the hawksSmall data frame, with parameters “adjust=0.5” and “adjust=2”, respectively. Your results should look like this:
+
+
+```{r}
+ggplot(data = hawksSmall, aes(x=Tail))+geom_density(adjust=0.5)+xlab("Tail Length")+ylab("Count")
+ggplot(data = hawksSmall, aes(x=Tail))+geom_density(adjust=2)+xlab("Tail Length")+ylab("Count")
+```
+
+Can you explain the difference between the two plots? How many modes does the distribution of Hawk tail lengths have in each of the plots.
+
+The second plot has a curve that is smoother version of the first plot. This is because the adjust argument in the geom_density() function adjusts the bandwidth of the density plot.A larger "adjust" corressponds to a larger bandwidth, hencce a smoother function in the plot, whilst a smaller "adjust" create a less smooth density plot which is mor esensitive to the local behavior of the data.
+
+Three modes are visible in the first plot. Two modes are visible in the second plot. 
+
+##(Q4) Based on the answer from (Q3), can you create the following plot?
+
+
+```{r}
+ggplot(data=hawksSmall, aes(x=Tail, color=Species))+geom_density(adjust=2)+xlab("Tail length")+ylab("Density")
+```
+
+
+## (Q5) Violin plot: Use the ggplot and geom_violin() functions to create the following violin plot for the three species. 
+
+```{r}
+ggplot(data=hawksSmall, aes(x=Tail, y=Species, fill=Species))+geom_violin()+xlab("Tail length")+ylab("Density") +theme_bw()
+```
+
+
+## (Q6) Scatter plot
+## Generate a plot similar to the following plot using the ggplot() and geom_point()functions.
+## 1. How many aesthetics are present within the following plot?
+There are four aesthetics: 
+(1) The tail length is mapped to the horizontal position, 
+(2) The weight is mapped to the vertical position, 
+(3) The species is mapped to the colour and 
+(4) The species is mapped to shape. 
+
+## 2. What are the glyphs within this plot?
+The glyphs are the small elements (in this particular case represented by the shapes) corresponding to individual cases
+
+## 3. What are the visual cues being used within this plot? 
+The visual cues include horizontal and vertical position, shape, color. 
+
+```{r}
+ggplot(hawksSmall, aes(x=Tail, y=Weight, color=Species, shape=Species)) + geom_point() + xlab('Tail (mm)') + ylab('Weight (mm)') + theme_bw()
+```
+
+
+## (Q7) Trend lines and facet wraps:
+##Generate the following plot using the ggplot(), geom_point(), geom_smooth() and facet_wrap() functions. Note that in the facet plot, the three panels use different scales.
+
+## 1. What are the visual cues being used within this plot?
+The visual cues include horizontal and vertical position, shape, color and direction. 
+
+## 2. Based on the plot below, what can we say about the relationship between the weight of the hawks and their tail lengths? 
+Based on this sample, longer tail lengths appear to be predictive of larger weights within each species. 
+
+```{r}
+ggplot(hawksSmall, aes(x=Tail, y=Weight, color=Species)) +
+  geom_point() + facet_wrap(~Species, scales = 'free') + geom_smooth(method = 'lm') + xlab('Tail (mm)')+ylab('Weight (mm)') +theme_bw()
+```
+
+## (Q8) Adding annotations
+## First, compute the “Weight” and the “Tail” of the heaviest hawk in the dataset. You can use filter() and select() function to select proper data. 
+
+```{r}
+max_weight<-max(hawksSmall$Weight, na.rm=TRUE)
+max_weight_row = head(hawksSmall %>% filter(Weight>=max_weight), 1)
+max_weight_tail = max_weight_row$Tail
+```
+Second, reuse the code that you create from Q(3), adding an arrow and an annotation to indicate the heaviest hawk. Your result should look similar to this: 
+
+```{r}
+ggplot(hawksSmall, aes(x=Tail, y=Weight, color=Species)) + geom_point() + xlab('Tail (mm)') + ylab('Weight (mm)') + theme_bw() + geom_curve(x=max_weight_tail,xend=max_weight_tail,y=max_weight-200,yend=max_weight, arrow=arrow(length=unit(0.1,"cm")), color="black")+ geom_text(x=max_weight_tail,y=max_weight-200,label='heaviest hawk',size=3,color="black")
+
+```
+
+
+## 2. Finite probability spaces
+## Now, let’s move on to consider probability on finite sample spaces, which is covered in Lecture 8.
+## 2.1 Sampling with replacement 
+
+
+for positive integers n and k, 
+\[
+\binom{n}{k} =\frac{n!}{k!(n-k)!}
+\]
+
+gives the number of subsets of size k from a set of n objects.
+
+You can compute this number straightforwardly within “R” via the choose function
+“choose()”. For example, if we want to compute the number of different subsets of
+size 3 from a collection of size 8 we would compute: 
+
+```{r}
+choose(8,3)
+```
+
+Suppose we have a bag containing 10 spheres. This includes 3 red spheres and 7 blue spheres. 
+
+Let’s suppose that we draw a sphere at random from the bag (all spheres have equal
+probability of being drawn). We record its colour and then return the sphere to the
+bag. This process is repeated 22 times. This is an example of sampling with
+replacement since the spheres are replaced after each draw. 
+
+
+
+(Q1) Write down a mathematical expression for the probability that z out of the 22 selections were red spheres (here z ∈ {0,1, ⋯ ,22}). 
+
+
+Let A be the event that z out of the 22 selections were red spheres. The probability is
+
+\[
+P(A) = \binom{22}{z} \left( \frac{3}{10}^{10}\right) \left(\frac{7}{10}^{22-x}\right)
+\]
+
+## (Q2) Next write an R function called “prob_red_spheres()” which takes z as an argument and computes the probability that 𝑧 out of a total of the 22 balls selected are red. 
+
+```{r}
+num_red_balls<-3
+num_blue_balls<-7
+total_draws<-22
+prob_red_spheres<-function(z){
+ total_balls<-num_red_balls+num_blue_balls
+ log_prob<-log(choose(total_draws,z))+
+ z*log(num_red_balls/total_balls)+(total_drawsz)*log(num_blue_balls/total_balls)
+ return(exp(log_prob))
+ prob_red_spheres(10)
+}
+
+```
+
+## (Q3) Generate a data frame called “prob_by_num_reds” with two columns “num_reds” and “prob”. The “num_reds” column should contain numbers 1 through 22 and the “prob” column should give the associated probability of selecting that many reds out of a total number of 22 selections. 
+
+```{r}
+prob_by_num_reds <- data.frame(num_reds=seq(22)) %>%
+ mutate(prob=prob_red_spheres(num_reds))
+prob_by_num_reds %>% head(3)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
