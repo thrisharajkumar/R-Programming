@@ -161,45 +161,232 @@ P(A) = \binom{22}{z} \left( \frac{3}{10}^{10}\right) \left(\frac{7}{10}^{22-x}\r
 ## (Q2) Next write an R function called “prob_red_spheres()” which takes z as an argument and computes the probability that 𝑧 out of a total of the 22 balls selected are red. 
 
 ```{r}
-num_red_balls<-3
-num_blue_balls<-7
-total_draws<-22
-prob_red_spheres<-function(z){
- total_balls<-num_red_balls+num_blue_balls
- log_prob<-log(choose(total_draws,z))+
- z*log(num_red_balls/total_balls)+(total_drawsz)*log(num_blue_balls/total_balls)
- return(exp(log_prob))
- prob_red_spheres(10)
-}
+num_red_balls<-3 
+num_blue_balls<-7 
+total_draws<-22 
+prob_red_spheres<-function(z){ 
+  total_balls<-num_red_balls+num_blue_balls 
+  log_prob<-log(choose(total_draws,z))+ 
+    z*log(num_red_balls/total_balls)+(total_draws-z)*log(num_blue_balls/total_balls) 
+  return(exp(log_prob)) 
+} 
+
+prob_red_spheres(10) 
 
 ```
 
 ## (Q3) Generate a data frame called “prob_by_num_reds” with two columns “num_reds” and “prob”. The “num_reds” column should contain numbers 1 through 22 and the “prob” column should give the associated probability of selecting that many reds out of a total number of 22 selections. 
 
 ```{r}
-prob_by_num_reds <- data.frame(num_reds=seq(22)) %>%
- mutate(prob=prob_red_spheres(num_reds))
+prob_by_num_reds <- data.frame(num_reds=seq(22)) %>% 
+  mutate(prob=prob_red_spheres(num_reds))
+
 prob_by_num_reds %>% head(3)
 ```
 
 
+## (Q4) Now use the “geom_line()” function within the “ggplot2” library, in conjunction with your data frame to display a plot of the probability as a function of the number of reds. 
+
+## Your plot should look as follows:
+
+```{r}
+ggplot(prob_by_num_reds, aes(x=num_reds, y=prob)) + geom_line() + xlab('Number of reds') + ylab('Probability') +theme_bw()
+```
+
+## (Q5) Next we shall explore the “sample()” function within R. Let’s suppose we want to simulate a random experiment in which we sample with replacement from a collection of 10 objects, and repeat this process 22 times. 
+
+```{r}
+sample(10,22, replace = TRUE)
+```
 
 
+Try this out for yourself. The output should be a vector of length 22 consisting entirely of numbers between 1 and 10. Since this is sampling with replacements and the number of samples exceeds the number of elements, there will be repetitions. 
+Try rerunning the function. You probably get a different sample.This is to be expected, and even desirable, since the function simulates a random sample. However, the fact that we get a different answer every time we run the code is problematic from the perspective of reproducibility. To avoid this process we can set a random seed via the function set.seed(). By doing so we should get the same output every time. Try the following out for yourself: 
+
+```{r}
+## case 1: Setting the random seed just once
+set.seed(0)
+
+for(i in 1:5){
+  print(sample(100,5, replace=FALSE))
+  # result may well differ every time
+}
+
+ 
+## case 2: Resetting the random seed every time 
+set.seed(1) 
+print(sample(100,5,replace=FALSE)) 
+set.seed(1) 
+print(sample(100,5,replace=FALSE)) 
+set.seed(1) 
+print(sample(100,5,replace=FALSE)) 
+# The result should not change 
+
+## case 3: reproducing case 1 if we set a random seed at the beginning.  
+set.seed(0) 
+for(i in 1:5){ 
+  print(sample(100,5,replace=FALSE)) 
+} 
+# The result will be 5 samples exactly the same as in case 1 (why?).
+```
 
 
+Next, try to understand what the following code does 
+
+```{r}
+itermap <- function(.x, .f) { 
+  result <- list() 
+  for (item in .x) { 
+    result <- c(result, list(.f(item))) 
+  } 
+  return(result) 
+} 
+ 
+itermap( c(1,2,3), function(x){ return(c(x,x^2)) } ) 
+## [[1]] 
+## [1] 1 1 
+##  
+## [[2]] 
+## [1] 2 4 
+##  
+## [[3]] 
+## [1] 3 9 
+itermap_dbl <- function(.x, .f) { 
+  result <- numeric(length(.x)) 
+  for (i in 1:length(.x)) { 
+    result[i] <- .f(.x[[i]]) 
+  } 
+  return(result) 
+} 
+ 
+itermap_dbl( c(1,2,3), function(x){ return(x^3) } )
+```
 
 
+We shall now use the “sample()” to construct a simulation study to explore the probability of selecting z red balls from a bag of size 10, with 3 red and 7 blue balls, when sampling 22 balls with replacement. 
+First set a random seed. Then create a data frame called 
+“sampling_with_replacement_simulation” consisting of two columns. The first is called “trial” and contains numbers 1 through 1000. The second is called “sample_balls” and corresponds to random samples of size 22 from a bag of size 10, with replacement. We can do this as follows:
+
+```{r}
+num_trials<-1000 # set the number of trials 
+set.seed(0) # set the random seed 
+sampling_with_replacement_simulation<-data.frame(trial=1:num_trials) %>% 
+mutate(sample_balls = itermap(.x=trial, function(x){sample(10,22, 
+replace = TRUE)})) 
+# generate collection of num_trials simulations 
+
+sampling_with_replacement_simulation <- 
+sampling_with_replacement_simulation %>%  
+mutate(num_reds = itermap_dbl( .x=sample_balls, function(.x) 
+sum(.x<=3) ) ) 
+
+```
 
 
+## (Q6) Next we shall add a new column called “predicted_prob” to our existing data frame “prob_by_num_reds” which gives the number of times (that we observed the corresponding number of reds within our simulation) divided by the total number of observations. This aims to estimate the probability of the event that 𝑧 out of a  total of the 22 balls selected are red (for 𝑧 = 1,2,⋯,22). We can do this as follows:
+
+```{r}
+num_reds_in_simulation<-sampling_with_replacement_simulation %>% 
+pull(num_reds)  
+# we extract a vector corresponding to the number of reds in each trial 
+prob_by_num_reds<-prob_by_num_reds %>% 
+mutate(predicted_prob=itermap_dbl(.x=num_reds, function(.x) 
+sum(num_reds_in_simulation==.x))/num_trials) 
+# add a column which gives the number of trials with a given number of reds 
+```
+
+## 2.2 Sampling without replacement 
+## This is a more challenging question, but the ideas from the last question are useful here. 
+## Let’s suppose we have a large bag containing 100 spheres. There are 50 red spheres, 30 blue spheres and 20 green spheres. Suppose that we sample 10 spheres from the bag without replacement. 
+## You may want to use the following steps: 
+## 1. First set a random seed;
+## 2. Next set a number of trials (e.g., 10 or 1000. Try this initially with a small number of simulations. Increase your number of simulations to about a relatively large number to get a more accurate answer, once everything seems to be working well), and a sample size (10); 
+## 3. Now use a combination of the functions “sample()”, “mutate()” and “itermap()” to generate your samples. Here you are creating a sample of size  10 from a collection of 100 balls - the sampling is done without replacement; 
+## 4. Now compute the number of “reds”, “greens” and “blues” in your sample using the “itermap_dbl()” and “mutate()” functions. 
+## 5. Compute the minimum of the three counts using the “pmin()” function. When this minimum is zero, then one of the three colours is missing. It is recommended that you look up the difference between “pmin()” and “min()” here; 
+## 6. Compute the proportion of rows for which the minimum number of the three counts is zero. 
+
+Answer
+
+```{r}
+# Step 1 
+set.seed(0) # set the random seed 
+# Step 2 
+num_trials <- 1000 # set the number of trials 
+sample_size <- 10 
+# Step 3 
+sampling_without_replacement_simulation <- 
+data.frame(trial=1:num_trials) %>% 
+  mutate(sample_balls=itermap(.x=trial,function(.x) 
+sample(100,sample_size,replace = FALSE))) 
+# generate collection of num_trials simulations 
+# Step 4 
+sampling_without_replacement_simulation <- 
+sampling_without_replacement_simulation %>% 
+  mutate(num_reds=itermap_dbl(.x=sample_balls, function(.x) sum( 
+(.x<=50) ) ), 
+         num_blues=itermap_dbl(.x=sample_balls, function(.x) sum( 
+(.x>50)*(.x<=80) ) ), 
+         num_greens=itermap_dbl(.x=sample_balls, function(.x) sum( 
+(.x>80) ) ), 
+         ) 
+# Step 5 
+sampling_without_replacement_simulation <- 
+sampling_without_replacement_simulation %>% 
+  mutate(mun_minimum=pmin(num_reds, num_blues, num_greens)) 
+# Step 6 
+proportion_zero = 
+mean(sampling_without_replacement_simulation$mun_minimum==0) 
+print(proportion_zero) 
+```
 
 
+## (Q2) (*Optional) This question is optional and may be omitted if you are short on time. 
+Let’s derive a mathematical expression for the probability that we considered in 
+(Q1): You can try and use “combinations” with  
+to compute the probability directly. First aim to compute the number of subsets of size 10 from 100 which either entirely miss out one of the subsets Red = {1,⋯,50}, Blues = {51,⋯,80}, Greens = {81,⋯,100}. Then compute the number of subsets of size 10 from 100 which miss out two of the subsets Red, Blues, Green. Be carefulnot to double count some of these subsets! Once you have computed all such subsets, combine them with the formula for the total number of subsets of size 10 from a set of 100, to compute the probability of missing a colour.
 
+Answer:
 
+Let \( A_1 \), \( A_2 \), and \( A_3 \) be the events at which the sample does not contain any red balls, blue balls, or green balls, respectively. So 
 
+\[
+|A_1| = \frac{50}{10}, \quad |A_2| = \frac{70}{10}, \quad |A_3| = \frac{80}{10}
+\]
 
+Let \( A_{1,2} \), \( A_{1,3} \), and \( A_{2,3} \) be the events that the sample does not contain any red balls or blue balls, red balls or green balls, and blue balls or green balls, respectively. So 
 
+\[
+|A_{1,2}| = \frac{20}{10}, \quad |A_{1,3}| = \frac{30}{10}, \quad |A_{2,3}| = \frac{50}{10}
+\]
 
+Let \( A \) be the event that one or more colors is missing from the sample. Then:
 
+\[
+|A| = |A_1| + |A_2| + |A_3| - |A_{1,2}| - |A_{1,3}| - |A_{2,3}|
+\]
 
+Now, substituting the values:
 
+\[
+|A| = \frac{50}{10} + \frac{70}{10} + \frac{80}{10} - \frac{20}{10} - \frac{30}{10} - \frac{50}{10}
+\]
 
+Simplifying:
+
+\[
+|A| = 5 + 7 + 8 - 2 - 3 - 5 = 10
+\]
+
+Once you have the mathematical expression for the probability, you can check how 
+close the probability computed in (Q1) to the theoretical values.
+
+Answer:
+
+```{r}
+num1 <- choose(50,10) + choose(70,10) + choose(80,10) - 
+choose(20,10) - choose(30,10) - choose(50,10) 
+num2 <- choose(100,10) 
+probs_A <- num1/num2 
+print(probs_A) 
+```

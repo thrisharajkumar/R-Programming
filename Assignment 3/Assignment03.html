@@ -11,7 +11,7 @@
 
 <meta name="author" content="Thrisha Rajkumar" />
 
-<meta name="date" content="2024-10-17" />
+<meta name="date" content="2024-10-23" />
 
 <title>Assignment 3</title>
 
@@ -352,7 +352,7 @@ display: none;
 
 <h1 class="title toc-ignore">Assignment 3</h1>
 <h4 class="author">Thrisha Rajkumar</h4>
-<h4 class="date">2024-10-17</h4>
+<h4 class="date">2024-10-23</h4>
 
 </div>
 
@@ -540,16 +540,296 @@ P(A) = \binom{22}{z} \left( \frac{3}{10}^{10}\right)
 <h2>(Q2) Next write an R function called “prob_red_spheres()” which
 takes z as an argument and computes the probability that 𝑧 out of a
 total of the 22 balls selected are red.</h2>
-<pre class="r"><code>num_red_balls&lt;-3
-num_blue_balls&lt;-7
-total_draws&lt;-22
-prob_red_spheres&lt;-function(z){
- total_balls&lt;-num_red_balls+num_blue_balls
- log_prob&lt;-log(choose(total_draws,z))+
- z*log(num_red_balls/total_balls)+(total_drawsz)*log(num_blue_balls/total_balls)
- return(exp(log_prob))
- prob_red_spheres(10)
+<pre class="r"><code>num_red_balls&lt;-3 
+num_blue_balls&lt;-7 
+total_draws&lt;-22 
+prob_red_spheres&lt;-function(z){ 
+  total_balls&lt;-num_red_balls+num_blue_balls 
+  log_prob&lt;-log(choose(total_draws,z))+ 
+    z*log(num_red_balls/total_balls)+(total_draws-z)*log(num_blue_balls/total_balls) 
+  return(exp(log_prob)) 
+} 
+
+prob_red_spheres(10) </code></pre>
+<pre><code>## [1] 0.05285129</code></pre>
+</div>
+<div id="q3-generate-a-data-frame-called-prob_by_num_reds-with-two-columns-num_reds-and-prob.-the-num_reds-column-should-contain-numbers-1-through-22-and-the-prob-column-should-give-the-associated-probability-of-selecting-that-many-reds-out-of-a-total-number-of-22-selections." class="section level2">
+<h2>(Q3) Generate a data frame called “prob_by_num_reds” with two
+columns “num_reds” and “prob”. The “num_reds” column should contain
+numbers 1 through 22 and the “prob” column should give the associated
+probability of selecting that many reds out of a total number of 22
+selections.</h2>
+<pre class="r"><code>prob_by_num_reds &lt;- data.frame(num_reds=seq(22)) %&gt;% 
+  mutate(prob=prob_red_spheres(num_reds))
+
+prob_by_num_reds %&gt;% head(3)</code></pre>
+<pre><code>##   num_reds        prob
+## 1        1 0.003686403
+## 2        2 0.016588812
+## 3        3 0.047396606</code></pre>
+</div>
+<div id="q4-now-use-the-geom_line-function-within-the-ggplot2-library-in-conjunction-with-your-data-frame-to-display-a-plot-of-the-probability-as-a-function-of-the-number-of-reds." class="section level2">
+<h2>(Q4) Now use the “geom_line()” function within the “ggplot2”
+library, in conjunction with your data frame to display a plot of the
+probability as a function of the number of reds.</h2>
+</div>
+<div id="your-plot-should-look-as-follows" class="section level2">
+<h2>Your plot should look as follows:</h2>
+<pre class="r"><code>ggplot(prob_by_num_reds, aes(x=num_reds, y=prob)) + geom_line() + xlab(&#39;Number of reds&#39;) + ylab(&#39;Probability&#39;) +theme_bw()</code></pre>
+<p><img role="img" src="data:image/png;base64,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" width="672" /></p>
+</div>
+<div id="q5-next-we-shall-explore-the-sample-function-within-r.-lets-suppose-we-want-to-simulate-a-random-experiment-in-which-we-sample-with-replacement-from-a-collection-of-10-objects-and-repeat-this-process-22-times." class="section level2">
+<h2>(Q5) Next we shall explore the “sample()” function within R. Let’s
+suppose we want to simulate a random experiment in which we sample with
+replacement from a collection of 10 objects, and repeat this process 22
+times.</h2>
+<pre class="r"><code>sample(10,22, replace = TRUE)</code></pre>
+<pre><code>##  [1]  3  1  7  1  8  3  3  8  2  1  6  8  3  4  2  3  6  4  9 10 10  5</code></pre>
+<p>Try this out for yourself. The output should be a vector of length 22
+consisting entirely of numbers between 1 and 10. Since this is sampling
+with replacements and the number of samples exceeds the number of
+elements, there will be repetitions. Try rerunning the function. You
+probably get a different sample.This is to be expected, and even
+desirable, since the function simulates a random sample. However, the
+fact that we get a different answer every time we run the code is
+problematic from the perspective of reproducibility. To avoid this
+process we can set a random seed via the function set.seed(). By doing
+so we should get the same output every time. Try the following out for
+yourself:</p>
+<pre class="r"><code>## case 1: Setting the random seed just once
+set.seed(0)
+
+for(i in 1:5){
+  print(sample(100,5, replace=FALSE))
+  # result may well differ every time
 }</code></pre>
+<pre><code>## [1] 14 68 39  1 34
+## [1] 87 43 14 82 59
+## [1] 51 97 85 21 54
+## [1] 74  7 73 79 85
+## [1]  37  89 100  34  99</code></pre>
+<pre class="r"><code>## case 2: Resetting the random seed every time 
+set.seed(1) 
+print(sample(100,5,replace=FALSE)) </code></pre>
+<pre><code>## [1] 68 39  1 34 87</code></pre>
+<pre class="r"><code>set.seed(1) 
+print(sample(100,5,replace=FALSE)) </code></pre>
+<pre><code>## [1] 68 39  1 34 87</code></pre>
+<pre class="r"><code>set.seed(1) 
+print(sample(100,5,replace=FALSE)) </code></pre>
+<pre><code>## [1] 68 39  1 34 87</code></pre>
+<pre class="r"><code># The result should not change 
+
+## case 3: reproducing case 1 if we set a random seed at the beginning.  
+set.seed(0) 
+for(i in 1:5){ 
+  print(sample(100,5,replace=FALSE)) 
+} </code></pre>
+<pre><code>## [1] 14 68 39  1 34
+## [1] 87 43 14 82 59
+## [1] 51 97 85 21 54
+## [1] 74  7 73 79 85
+## [1]  37  89 100  34  99</code></pre>
+<pre class="r"><code># The result will be 5 samples exactly the same as in case 1 (why?).</code></pre>
+<p>Next, try to understand what the following code does</p>
+<pre class="r"><code>itermap &lt;- function(.x, .f) { 
+  result &lt;- list() 
+  for (item in .x) { 
+    result &lt;- c(result, list(.f(item))) 
+  } 
+  return(result) 
+} 
+ 
+itermap( c(1,2,3), function(x){ return(c(x,x^2)) } ) </code></pre>
+<pre><code>## [[1]]
+## [1] 1 1
+## 
+## [[2]]
+## [1] 2 4
+## 
+## [[3]]
+## [1] 3 9</code></pre>
+<pre class="r"><code>## [[1]] 
+## [1] 1 1 
+##  
+## [[2]] 
+## [1] 2 4 
+##  
+## [[3]] 
+## [1] 3 9 
+itermap_dbl &lt;- function(.x, .f) { 
+  result &lt;- numeric(length(.x)) 
+  for (i in 1:length(.x)) { 
+    result[i] &lt;- .f(.x[[i]]) 
+  } 
+  return(result) 
+} 
+ 
+itermap_dbl( c(1,2,3), function(x){ return(x^3) } )</code></pre>
+<pre><code>## [1]  1  8 27</code></pre>
+<p>We shall now use the “sample()” to construct a simulation study to
+explore the probability of selecting z red balls from a bag of size 10,
+with 3 red and 7 blue balls, when sampling 22 balls with replacement.
+First set a random seed. Then create a data frame called
+“sampling_with_replacement_simulation” consisting of two columns. The
+first is called “trial” and contains numbers 1 through 1000. The second
+is called “sample_balls” and corresponds to random samples of size 22
+from a bag of size 10, with replacement. We can do this as follows:</p>
+<pre class="r"><code>num_trials&lt;-1000 # set the number of trials 
+set.seed(0) # set the random seed 
+sampling_with_replacement_simulation&lt;-data.frame(trial=1:num_trials) %&gt;% 
+mutate(sample_balls = itermap(.x=trial, function(x){sample(10,22, 
+replace = TRUE)})) 
+# generate collection of num_trials simulations 
+
+sampling_with_replacement_simulation &lt;- 
+sampling_with_replacement_simulation %&gt;%  
+mutate(num_reds = itermap_dbl( .x=sample_balls, function(.x) 
+sum(.x&lt;=3) ) ) </code></pre>
+</div>
+<div id="q6-next-we-shall-add-a-new-column-called-predicted_prob-to-our-existing-data-frame-prob_by_num_reds-which-gives-the-number-of-times-that-we-observed-the-corresponding-number-of-reds-within-our-simulation-divided-by-the-total-number-of-observations.-this-aims-to-estimate-the-probability-of-the-event-that-𝑧-out-of-a-total-of-the-22-balls-selected-are-red-for-𝑧-1222.-we-can-do-this-as-follows" class="section level2">
+<h2>(Q6) Next we shall add a new column called “predicted_prob” to our
+existing data frame “prob_by_num_reds” which gives the number of times
+(that we observed the corresponding number of reds within our
+simulation) divided by the total number of observations. This aims to
+estimate the probability of the event that 𝑧 out of a total of the 22
+balls selected are red (for 𝑧 = 1,2,⋯,22). We can do this as
+follows:</h2>
+<pre class="r"><code>num_reds_in_simulation&lt;-sampling_with_replacement_simulation %&gt;% 
+pull(num_reds)  
+# we extract a vector corresponding to the number of reds in each trial 
+prob_by_num_reds&lt;-prob_by_num_reds %&gt;% 
+mutate(predicted_prob=itermap_dbl(.x=num_reds, function(.x) 
+sum(num_reds_in_simulation==.x))/num_trials) 
+# add a column which gives the number of trials with a given number of reds </code></pre>
+</div>
+<div id="sampling-without-replacement" class="section level2">
+<h2>2.2 Sampling without replacement</h2>
+</div>
+<div id="this-is-a-more-challenging-question-but-the-ideas-from-the-last-question-are-useful-here." class="section level2">
+<h2>This is a more challenging question, but the ideas from the last
+question are useful here.</h2>
+</div>
+<div id="lets-suppose-we-have-a-large-bag-containing-100-spheres.-there-are-50-red-spheres-30-blue-spheres-and-20-green-spheres.-suppose-that-we-sample-10-spheres-from-the-bag-without-replacement." class="section level2">
+<h2>Let’s suppose we have a large bag containing 100 spheres. There are
+50 red spheres, 30 blue spheres and 20 green spheres. Suppose that we
+sample 10 spheres from the bag without replacement.</h2>
+</div>
+<div id="you-may-want-to-use-the-following-steps" class="section level2">
+<h2>You may want to use the following steps:</h2>
+</div>
+<div id="first-set-a-random-seed" class="section level2">
+<h2>1. First set a random seed;</h2>
+</div>
+<div id="next-set-a-number-of-trials-e.g.-10-or-1000.-try-this-initially-with-a-small-number-of-simulations.-increase-your-number-of-simulations-to-about-a-relatively-large-number-to-get-a-more-accurate-answer-once-everything-seems-to-be-working-well-and-a-sample-size-10" class="section level2">
+<h2>2. Next set a number of trials (e.g., 10 or 1000. Try this initially
+with a small number of simulations. Increase your number of simulations
+to about a relatively large number to get a more accurate answer, once
+everything seems to be working well), and a sample size (10);</h2>
+</div>
+<div id="now-use-a-combination-of-the-functions-sample-mutate-and-itermap-to-generate-your-samples.-here-you-are-creating-a-sample-of-size-10-from-a-collection-of-100-balls---the-sampling-is-done-without-replacement" class="section level2">
+<h2>3. Now use a combination of the functions “sample()”, “mutate()” and
+“itermap()” to generate your samples. Here you are creating a sample of
+size 10 from a collection of 100 balls - the sampling is done without
+replacement;</h2>
+</div>
+<div id="now-compute-the-number-of-reds-greens-and-blues-in-your-sample-using-the-itermap_dbl-and-mutate-functions." class="section level2">
+<h2>4. Now compute the number of “reds”, “greens” and “blues” in your
+sample using the “itermap_dbl()” and “mutate()” functions.</h2>
+</div>
+<div id="compute-the-minimum-of-the-three-counts-using-the-pmin-function.-when-this-minimum-is-zero-then-one-of-the-three-colours-is-missing.-it-is-recommended-that-you-look-up-the-difference-between-pmin-and-min-here" class="section level2">
+<h2>5. Compute the minimum of the three counts using the “pmin()”
+function. When this minimum is zero, then one of the three colours is
+missing. It is recommended that you look up the difference between
+“pmin()” and “min()” here;</h2>
+</div>
+<div id="compute-the-proportion-of-rows-for-which-the-minimum-number-of-the-three-counts-is-zero." class="section level2">
+<h2>6. Compute the proportion of rows for which the minimum number of
+the three counts is zero.</h2>
+<p>Answer</p>
+<pre class="r"><code># Step 1 
+set.seed(0) # set the random seed 
+# Step 2 
+num_trials &lt;- 1000 # set the number of trials 
+sample_size &lt;- 10 
+# Step 3 
+sampling_without_replacement_simulation &lt;- 
+data.frame(trial=1:num_trials) %&gt;% 
+  mutate(sample_balls=itermap(.x=trial,function(.x) 
+sample(100,sample_size,replace = FALSE))) 
+# generate collection of num_trials simulations 
+# Step 4 
+sampling_without_replacement_simulation &lt;- 
+sampling_without_replacement_simulation %&gt;% 
+  mutate(num_reds=itermap_dbl(.x=sample_balls, function(.x) sum( 
+(.x&lt;=50) ) ), 
+         num_blues=itermap_dbl(.x=sample_balls, function(.x) sum( 
+(.x&gt;50)*(.x&lt;=80) ) ), 
+         num_greens=itermap_dbl(.x=sample_balls, function(.x) sum( 
+(.x&gt;80) ) ), 
+         ) 
+# Step 5 
+sampling_without_replacement_simulation &lt;- 
+sampling_without_replacement_simulation %&gt;% 
+  mutate(mun_minimum=pmin(num_reds, num_blues, num_greens)) 
+# Step 6 
+proportion_zero = 
+mean(sampling_without_replacement_simulation$mun_minimum==0) 
+print(proportion_zero) </code></pre>
+<pre><code>## [1] 0.124</code></pre>
+</div>
+<div id="q2-optional-this-question-is-optional-and-may-be-omitted-if-you-are-short-on-time." class="section level2">
+<h2>(Q2) (*Optional) This question is optional and may be omitted if you
+are short on time.</h2>
+<p>Let’s derive a mathematical expression for the probability that we
+considered in (Q1): You can try and use “combinations” with<br />
+to compute the probability directly. First aim to compute the number of
+subsets of size 10 from 100 which either entirely miss out one of the
+subsets Red = {1,⋯,50}, Blues = {51,⋯,80}, Greens = {81,⋯,100}. Then
+compute the number of subsets of size 10 from 100 which miss out two of
+the subsets Red, Blues, Green. Be carefulnot to double count some of
+these subsets! Once you have computed all such subsets, combine them
+with the formula for the total number of subsets of size 10 from a set
+of 100, to compute the probability of missing a colour.</p>
+<p>Answer:</p>
+<p>Let <span class="math inline">\(A_1\)</span>, <span class="math inline">\(A_2\)</span>, and <span class="math inline">\(A_3\)</span> be the events at which the sample
+does not contain any red balls, blue balls, or green balls,
+respectively. So</p>
+<p><span class="math display">\[
+|A_1| = \frac{50}{10}, \quad |A_2| = \frac{70}{10}, \quad |A_3| =
+\frac{80}{10}
+\]</span></p>
+<p>Let <span class="math inline">\(A_{1,2}\)</span>, <span class="math inline">\(A_{1,3}\)</span>, and <span class="math inline">\(A_{2,3}\)</span> be the events that the sample
+does not contain any red balls or blue balls, red balls or green balls,
+and blue balls or green balls, respectively. So</p>
+<p><span class="math display">\[
+|A_{1,2}| = \frac{20}{10}, \quad |A_{1,3}| = \frac{30}{10}, \quad
+|A_{2,3}| = \frac{50}{10}
+\]</span></p>
+<p>Let <span class="math inline">\(A\)</span> be the event that one or
+more colors is missing from the sample. Then:</p>
+<p><span class="math display">\[
+|A| = |A_1| + |A_2| + |A_3| - |A_{1,2}| - |A_{1,3}| - |A_{2,3}|
+\]</span></p>
+<p>Now, substituting the values:</p>
+<p><span class="math display">\[
+|A| = \frac{50}{10} + \frac{70}{10} + \frac{80}{10} - \frac{20}{10} -
+\frac{30}{10} - \frac{50}{10}
+\]</span></p>
+<p>Simplifying:</p>
+<p><span class="math display">\[
+|A| = 5 + 7 + 8 - 2 - 3 - 5 = 10
+\]</span></p>
+<p>Once you have the mathematical expression for the probability, you
+can check how close the probability computed in (Q1) to the theoretical
+values.</p>
+<p>Answer:</p>
+<pre class="r"><code>num1 &lt;- choose(50,10) + choose(70,10) + choose(80,10) - 
+choose(20,10) - choose(30,10) - choose(50,10) 
+num2 &lt;- choose(100,10) 
+probs_A &lt;- num1/num2 
+print(probs_A) </code></pre>
+<pre><code>## [1] 0.1180318</code></pre>
 </div>
 
 
