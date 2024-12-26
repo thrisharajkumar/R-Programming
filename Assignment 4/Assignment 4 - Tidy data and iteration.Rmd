@@ -2,6 +2,7 @@
 title: "Assignment 4"
 author: "Thrisha Rajkumar"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: 
+html_document: default
 ---
 
