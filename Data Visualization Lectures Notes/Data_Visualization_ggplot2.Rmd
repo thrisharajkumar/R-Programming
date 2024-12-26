@@ -3,13 +3,10 @@ title: "Lecture_7_Week3"
 author: "Thrisha Rajkumar"
 date: "`r Sys.Date()`"
 output:
-  html_document:
-    df_print: paged
----
+  pdf_document:
+    latex_engine: xelatex
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+---
 
 ###  load packages: the Palmer penguins data set & tidyverse 
 
