@@ -2,7 +2,122 @@
 title: "Assignment 4"
 author: "Thrisha Rajkumar"
 date: "`r Sys.Date()`"
-output: 
-html_document: default
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
+
+
+
+## Q1.
+The following function performs imputation by mean. What library do we need 
+to load to run this function? 
+
+```{r}
+# Adding tidyverse to run this function 
+library(tidyverse) 
+```
+
+```{r}
+
+impute_by_mean<-function(x){ 
+mu<-mean(x,na.rm=TRUE) # first compute the mean of x 
+  impute_f<-function(z){ # coordinate-wise imputation 
+    if(is.na(z)){ 
+      return(mu) # if z is na replace with mean 
+      }else{ 
+        return(z) # otherwise leave in place 
+      } 
+    } 
+return(map_dbl(x,impute_f)) # apply the map function to impute across 
+vector 
+}
+```
+
+##Q2. 
+Create a function called “impute_by_median” which imputes missing values 
+based on the median of the sample, rather than the mean. 
+
+```{r}
+impute_by_mean <- function(x){
+  median_of_x <-median(x, na.rm=TRUE) #first computing the median of x
+  
+  replace_function <-function(y){
+    if(is.na(z)){
+      return(median_of_x)
+    }
+    else{
+      return(z)
+    }
+  } 
+return(map_dbl(x,replace_function)) 
+}
+v<-c(1,2,NA,4) 
+impute_by_median(v) 
+```
+
+## Q3. 
+## Question
+Generate a data frame `df_xy` with the following specifications:
+
+1. The variable `x` is a sequence defined as:
+   - Starting value: 0
+   - Ending value: 10
+   - Increment: 0.1
+
+2. The variable `y` is calculated as `y = 5x + 1` for each corresponding value of `x`.
+
+3. Place these variables into a data frame called `df_xy`.
+
+4. Display the first few rows of the data frame.
+
+```{r}
+x <- seq(from = 0, to=10, by=0.1)
+y <- x*5 + 1
+df_xy = data.frame(x,y)
+df_xy %>% head(5)
+```
+
+##Q3.
+map2: 
+The “map2()” function is similar to the “map()” function but iterates over two 
+variables in parallel rather than one. You can learn more here 
+https://purrr.tidyverse.org/reference/map2.html. The following simple example 
+shows you how “map2_dbl()” can be combined with the “mutate()” function. 
+
+```{r}
+df_xy %>% 
+  mutate(z=map2_dbl(x,y,~.x+.y)) %>% 
+  head(5) 
+```
+
+use map2_dbl() to generate a new data frame with missing data. 
+First create a function “sometimes_missing” with two arguments: “index” and 
+“value”. The “function” should return “NA” if index is divisible by 5 and returns value 
+otherwise. 
+```{r}
+sometimes_missing <- function(index, value){
+  if(index%%5==0){
+    return(NA)
+  }else{
+    return(value)
+  }
+}
+sometimes_missing(14,25) 
+```
+
+we need to generate "df_xy_missing" with two variables x and y
+
+"d_xy_missing" 
+"row_number(),
+map2_dbl(), 
+mutate() 
+
+```{r}
+df_xy_missing <- df_xy %>% 
+  mutate(y=map2_dbl(row_number(),y,sometimes_missing)) 
+df_xy_missing<-df_xy  %>% 
+  mutate(y=map2_dbl(.x=row_number(),.y=y,sometimes_missing)) 
+df_xy_missing %>% head(10) 
+```
 
