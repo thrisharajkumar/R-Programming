@@ -1,0 +1,507 @@
+---
+title: "Assignment-5"
+author: "Thrisha Rajkumar"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+### Assignment 5
+
+```{r}
+library(tidyverse) 
+
+library(Stat2Data) 
+data("Hawks") 
+```
+
+### 1. Exploratory data analysis
+
+```{r}
+head(Hawks,10)
+```
+
+1.1 Location estimators 
+(Q1) 
+
+```{r}
+HawksTail = Hawks$Tail 
+head(HawksTail) 
+
+print(mean(HawksTail)) 
+
+print(median(HawksTail))
+```
+
+## 1.2 Combining location estimators with the summarise function 
+
+### (Q1) 
+
+```{r}
+summarise(Hawks, Wing_mean=mean(Wing, na.rm=TRUE), 
+Wing_t_mean=mean(Wing, trim=0.5, na.rm=TRUE), 
+Wing_med=median(Wing, na.rm=TRUE), Weight_mean=mean(Weight, 
+na.rm=TRUE),  
+Weight_t_mean=mean(Weight, trim=0.5, na.rm=TRUE), 
+Weight_med=median(Weight, na.rm=TRUE)) 
+
+```
+
+### (Q2) 
+
+```{r}
+group_by(Hawks, Species) %>% 
+summarise(Wing_mean=mean(Wing, na.rm=TRUE), Wing_t_mean=mean(Wing, 
+trim=0.5, na.rm=TRUE), 
+Wing_med=median(Wing, na.rm=TRUE), Weight_mean=mean(Weight, 
+na.rm=TRUE),  
+Weight_t_mean=mean(Weight, trim=0.5, na.rm=TRUE), 
+Weight_med=median(Weight, na.rm=TRUE))
+```
+
+## 1.3 Location and dispersion estimators under linear transformations 
+
+### (Q1) 
+
+```{r}
+mean(HawksTail)*2+3 
+mean(HawksTail*2+3) 
+```
+
+### (Q2)
+
+```{r}
+var(HawksTail)*4 
+ 
+var(HawksTail*2+3) 
+
+sd(HawksTail)*2 
+
+sd(HawksTail*2+3) 
+```
+
+### 1.4 Robustness of location estimators 
+
+```{r}
+hal<-Hawks$Hallux # Extract the vector of hallux lengths 
+hal<-hal[!is.na(hal)] # Remove any nans 
+
+outlier_val<-100 
+num_outliers<-10 
+corrupted_hal<-c(hal,rep(outlier_val,times=num_outliers)) 
+
+mean(hal) 
+
+mean(corrupted_hal) 
+
+num_outliers_vect <- seq(0,1000) 
+means_vect <- c() 
+for(num_outliers in num_outliers_vect){ 
+corrupted_hal <- c(hal,rep(outlier_val,times=num_outliers)) 
+means_vect <- c(means_vect, mean(corrupted_hal)) 
+} 
+
+
+```
+
+### (Q1) Sample median: 
+
+```{r}
+num_outliers_vect <- seq(0,1000) 
+medians_vect <- c() 
+for(num_outliers in num_outliers_vect){ 
+corrupted_hal <- c(hal,rep(outlier_val,times=num_outliers)) 
+medians_vect <- c(medians_vect, median(corrupted_hal)) 
+} 
+```
+
+### (Q2) Sample trimmed mean: 
+
+```{r}
+num_outliers_vect <- seq(0,1000) 
+t_means_vect <- c() 
+for(num_outliers in num_outliers_vect){ 
+corrupted_hal <- c(hal,rep(outlier_val,times=num_outliers)) 
+t_means_vect <- c(t_means_vect, mean(corrupted_hal, trim=0.1)) 
+} 
+```
+
+### (Q3) Visualisation 
+
+```{r}
+df_means_medians <- data.frame(num_outliers=num_outliers_vect, mean=means_vect, t_mean=t_means_vect, median=medians_vect) 
+```
+
+```{r}
+df_means_medians %>% 
+pivot_longer(!num_outliers, names_to = "Estimator", values_to = 
+"Value") %>% 
+ggplot(aes(x=num_outliers,color=Estimator, 
+linetype=Estimator,y=Value)) + 
+geom_line()+xlab("Number of outliers")
+```
+
+### 1.5 Box plots and outliers 
+
+### (Q1) 
+```{r}
+ggplot(Hawks, aes(x=Species, y=Weight)) + geom_boxplot() 
+```
+
+### (Q2) quantile and boxplots 
+
+```{r}
+group_by(Hawks, Species) %>%  
+summarise(quantile025=quantile(Weight, probs=0.25, na.rm=TRUE), 
+quantile050=quantile(Weight, probs=0.5, na.rm=TRUE), 
+quantile075=quantile(Weight, probs=0.75, na.rm=TRUE))
+```
+
+### (Q3) Outliers 
+
+```{r}
+num_outliers <- function(x){ 
+q25 <- quantile(x, 0.25, na.rm=TRUE) 
+q75 <- quantile(x, 0.75, na.rm=TRUE) 
+iq_range <- q75 - q25 
+num <- sum( (x>q75+1.5*iq_range)|(x<q25-1.5*iq_range), na.rm=TRUE ) 
+return (num) 
+} 
+
+num_outliers( c(0, 40,60,185)) 
+
+```
+
+### (Q4) Outliers by group 
+```{r}
+group_by(Hawks, Species) %>% 
+summarise(num_outliers_weight = num_outliers(Weight)) 
+
+```
+
+### 1.6 Covariance and correlation under linear transformations 
+### (Q1) 
+
+```{r}
+cov(Hawks$Weight, Hawks$Wing, use='complete.obs') 
+cor(Hawks$Weight, Hawks$Wing, use='complete.obs') 
+```
+
+(Q2) 
+
+(Q1). 
+```{r}
+cov(Hawks$Weight, Hawks$Wing, use='complete.obs')*2.4*(-1) -  
+cov(Hawks$Weight*2.4+7.1, Hawks$Wing*(-1)+3, use='complete.obs') 
+
+
+cor(Hawks$Weight, Hawks$Wing, use='complete.obs')*sign(2.4*(-1)) -  
+cor(Hawks$Weight*2.4+7.1, Hawks$Wing*(-1)+3, use='complete.obs') 
+```
+
+### 2. Random variables and discrete random variables 
+
+
+### Random Variables and Discrete Random Variables
+
+### Expectation
+
+The expectation \( \mathbb{E}(X) \) of the random variable \( X \) is defined by
+
+\[
+\mathbb{E}(X) := \sum_{x \in \mathbb{R}} x \cdot p(x).
+\]
+
+### Linearity of Expectation
+
+Given random variables \( X_1, X_2, \dots, X_n \) and numbers \( \alpha_1, \alpha_2, \dots, \alpha_n \)
+
+So, 
+
+\[
+\mathbb{E}(\alpha X) = \alpha \mathbb{E}(X).
+\]
+
+### Equivalent Condition for Independent Random Variables
+
+Let \( X_1, X_2, \dots, X_n: \Omega \to \mathbb{R} \) be a sequence of random variables. Then \( X_1, X_2, \dots, X_n \) are independent if and only if the following relationship holds for every sequence of well-behaved functions \( f_1, f_2, \dots, f_n \):
+
+\[
+\mathbb{E}[f_1(X_1) \dots f_n(X_n)] = \mathbb{E}[f_1(X_1)] \cdot \mathbb{E}[f_2(X_2)] \cdot \dots \cdot \mathbb{E}[f_n(X_n)].
+\]
+
+### 2.1 Expectation and Variance
+
+#### (Q1) Covariance Between Independent Random Variables
+
+Suppose \( X \) and \( Y \) are independent. The covariance between \( X \) and \( Y \) is defined by
+
+\[
+\text{Cov}(X, Y) := \mathbb{E}[(X - \mathbb{E}[X]) \cdot (Y - \mathbb{E}[Y])].
+\]
+
+
+\[
+\text{Cov}(X, Y) = \mathbb{E}[XY] - \mathbb{E}[X] \cdot \mathbb{E}[Y].
+\]
+
+Since \( X \) and \( Y \) are independent, we use the linearity of expectation and the equivalent condition for independent random variables:
+
+\[
+\mathbb{E}[XY] = \mathbb{E}[f(X)f(Y)] = \mathbb{E}[f(X)] \cdot \mathbb{E}[f(Y)] = \mathbb{E}[X] \cdot \mathbb{E}[Y].
+\]
+
+
+\[
+\text{Cov}(X, Y) = \mathbb{E}[XY] - \mathbb{E}[X] \cdot \mathbb{E}[Y] = 0.
+\]
+
+### 2.2 Distributions
+
+\[
+\mathbb{P}(X = 3) = \alpha, \quad \mathbb{P}(X = 10) = \beta, \quad \mathbb{P}(X \notin \{0, 3, 10\}) = 0.
+\]
+
+#### (Q1) Expectation and Variance of a Discrete Random Variable
+
+1. **Probability Mass Function (PMF)**: The probability mass function \( p(x) \) of \( X \) is
+
+\[
+p(x) = 
+\begin{cases} 
+1 - \alpha - \beta & \text{if } x = 0, \\
+\alpha & \text{if } x = 3, \\
+\beta & \text{if } x = 10, \\
+0 & \text{otherwise}.
+\end{cases}
+\]
+
+2. **Expectation of \( X \)**: The expectation of \( X \) is
+
+\[
+\mathbb{E}(X) = 3\alpha + 10\beta.
+\]
+
+3. **Variance of \( X \)**: The variance of \( X \) is
+
+\[
+\text{Var}(X) = \mathbb{E}(X^2) - (\mathbb{E}(X))^2.
+\]
+
+First, calculate \( \mathbb{E}(X^2) \):
+
+\[
+\mathbb{E}(X^2) = 3^2 \cdot \alpha + 10^2 \cdot \beta = 9\alpha + 100\beta.
+\]
+
+Now, the variance is
+
+\[
+\text{Var}(X) = (9\alpha + 100\beta) - (3\alpha + 10\beta)^2.
+\]
+
+4. **Standard Deviation of \( X \)**: The standard deviation is the square root of the variance:
+
+\[
+\text{SD}(X) = \sqrt{\text{Var}(X)}.
+\]
+
+#### (Q2) Distribution and Distribution Function
+
+1. **Distribution of \( X \)**: The distribution of \( X \) is
+
+\[
+P(S) = (1 - \alpha - \beta) \mathbb{1}(0) + \alpha \mathbb{1}(3) + \beta \mathbb{1}(10).
+\]
+
+2. **Distribution Function of \( X \)**: The distribution function \( F(x) \) of \( X \) is
+
+\[
+F(x) = 
+\begin{cases} 
+0 & \text{if } x < 0, \\
+1 - \alpha - \beta & \text{if } 0 \leq x < 3, \\
+1 - \beta & \text{if } 3 \leq x < 10, \\
+1 & \text{if } x \geq 10.
+\end{cases}
+\]
+
+#### (Q3) Variance and Covariance
+
+The variance of \( Y \) is the sum of the variances of the independent random variables:
+
+\[
+\text{Var}(Y) = n \cdot \text{Var}(X) = n \cdot (9\alpha + 100\beta - 9\alpha - 100\beta - 60\alpha \beta).
+\]
+
+## Q4.
+
+```{r}
+Gen_X_numbers <- function(n){ 
+Uniform <- runif(n) 
+X = 0*(Uniform<0.5) + 3 * ( (Uniform>=0.5)*(Uniform<0.7) ) + 10 * 
+(Uniform>0.7) 
+return (X) 
+} 
+set.seed(1002) 
+
+Gen_X_numbers(4) 
+
+Gen_Y_samples <- function(m,n){ 
+Y_sample <- data.frame(index=seq(m)) %>%  
+mutate(Y=map_dbl(index, ~ sum(Gen_X_numbers(n)) )) 
+return (Y_sample) 
+} 
+
+Gen_Y_samples(5, 2) 
+
+
+# Visualization
+samples_Y <- Gen_Y_samples(50000, 3) 
+ggplot(samples_Y, aes(Y)) + geom_bar() + theme_bw()
+
+```
+
+
+```{r}
+samples_Y <- Gen_Y_samples(50000, 20) 
+ggplot(samples_Y, aes(Y)) + geom_bar() + theme_bw()
+print(range(samples_Y)) 
+print(diff(range(samples_Y)))
+
+```
+
+```{r}
+samples_Y <- Gen_Y_samples(50000, 1000) 
+ggplot(samples_Y, aes(Y)) + geom_bar() + theme_bw() 
+```
+
+
+
+### 3. Continuous random variables and limit laws 
+
+### 3.1 Simulating data with the uniform distribution
+### Q2.
+```{r}
+set.seed(0) 
+n <- 1000 
+sample_X <- data.frame(U=runif(n)) %>% 
+mutate(X=case_when( 
+(0<=U)&(U<0.25)~3, 
+(0.25<=U)&(U<0.5)~10, 
+(0.5<=U)&(U<=1)~0)) %>% 
+pull(X) 
+```
+
+### Q3.
+
+```{r}
+sample_X_0310 <- function(alpha, beta, n){ 
+sample_X <- data.frame(U=runif(n)) %>% 
+mutate(X=case_when( 
+(0<=U)&(U<alpha)~3, 
+(alpha<=U)&(U<alpha+beta)~10, 
+(alpha+beta<=U)&(U<=1)~0)) %>% 
+pull(X) 
+return (sample_X) 
+}
+```
+
+### Q4. 
+
+```{r}
+n <- 10000 
+alpha <- 1/2 
+beta <- 1/10 
+sample_X <- sample_X_0310(alpha,beta,n) 
+mean(sample_X)
+```
+
+### Q5. 
+
+```{r}
+var(sample_X) 
+```
+
+### Q6. 
+
+```{r}
+n = 100 
+alpha = 1/10 
+samples <- data.frame(beta = seq(0, 9/10, 0.01)) %>% 
+mutate( sample_X =  map(beta, ~sample_X_0310(alpha,.x,n) )) %>% 
+mutate( samplemean = map_dbl(sample_X, mean) ) %>% 
+mutate( Expectation = 3*alpha + 10*beta)
+```
+
+### Q7. 
+```{r}
+df <- samples %>% pivot_longer(cols=c(samplemean, Expectation),  
+names_to = 'name', values_to = 'value') 
+ggplot(df, aes(x=beta, y=value, color=name)) +  
+geom_point()  + theme_bw() 
+```
+
+### 3.2 Exponential distribution 
+### Q2.
+```{r}
+my_cdf_exp <- function(x, lambda){ 
+if (x<0) {return (0)} 
+return (1-exp(-lambda*x)) 
+} 
+lambda <- 1/2 
+map_dbl(.x=seq(-1,4), .f=~my_cdf_exp(x=.x,lambda=lambda) )
+
+test_inputs <- seq(-1,10,0.1) 
+my_cdf_output <- map_dbl(.x=test_inputs, .f=~my_cdf_exp(x=.x,lambda=lambda)) 
+inbuilt_cdf_output <- map_dbl(.x=test_inputs,.f=~pexp(q=.x,rate=lambda)) 
+all.equal(my_cdf_output,inbuilt_cdf_output)
+```
+
+### Q3.
+
+```{r}
+my_quantile_exp <- function(p, lambda){ 
+  if (p<=0) return (-Inf) 
+  return (log(1-p)/(-lambda)) 
+  } 
+test_inputs <- seq(0.01, 0.99, 0.01) 
+my_quantile_output <- map_dbl(.x=test_inputs, .f=~my_quantile_exp(p=.x,lambda=lambda)) 
+inbuilt_quantile_output <- map_dbl(.x=test_inputs,.f=~qexp(p=.x,rate=lambda))
+all.equal(my_quantile_output,inbuilt_quantile_output)
+```
+
+### 3.3 The Binomial distribution and the central limit theorem 
+
+### Q2.
+```{r}
+binom_df <- data.frame(x = seq(0,50)) %>% 
+mutate(pmf = map_dbl(x, ~dbinom(.x, size=50, prob=0.7)) ) 
+head(binom_df, 3) 
+```
+
+
+### Q3.
+```{r}
+gaussian_df <- data.frame(x = seq(0, 50, 0.01)) %>%  
+mutate(pdf = map_dbl(x, ~dnorm(.x, mean=50*0.7, sd=sqrt(50*0.7*(1-0.7)) ) ) ) 
+head(gaussian_df, 3) 
+```
+
+### Q4.
+
+```{r}
+colors<-c("Gaussian pdf"="red", "Binomial pmf"="blue") 
+fill<-c("Gaussian pdf"="white", "Binomial pmf"="white") 
+ggplot() + labs(x="x",y="Probability") + theme_bw() + 
+
+geom_line(data=gaussian_df, aes(x,y=pdf,color="Gaussian pdf"),size=2) + 
+
+geom_col(data=binom_df, aes(x=x,y=pmf, color="Binomial pmf",fill="Binomial pmf")) + 
+
+scale_color_manual(name = "myLegend", values=colors) + 
+scale_fill_manual(name = "myLegend", values=fill) +  
+xlim(c(20,50))
+```
+
+
+
