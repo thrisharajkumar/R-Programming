@@ -1,0 +1,6 @@
+---
+title: "Assignment_7"
+author: "Thrisha Rajkumar"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
